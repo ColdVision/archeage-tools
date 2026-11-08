@@ -1,0 +1,30 @@
+{
+ "_about": "Перенесено со скриншотов игры D:\\Claude\\aa-tools\\recipes\\1-13.jpg. Список: [название EN, количество на иконке (выход), 1 = рецепт закрыт (красный)]. known: состав выбранного (первого) рецепта в списке; материалы опознаны по иконкам; у Standard Additive первый материал (травяной лист) определён по иконке с невысокой уверенностью (Wild Petal).",
+ "tabs": [
+  {"key": "food", "ru": "Еда", "subs": [
+   {"key": "food", "ru": "Еда", "list": [["Rough Meat",1,0],["Trimmed Meat",1,0],["Aged Meat",1,0],["Refined Barley",1,0],["Starch",1,0],["Golden Pickled Vegetables",1,0],["Grain Liquor",1,0],["Rainbow Fruit Jam",1,0],["Michelan's Seasoning Essence",1,0],["Rough Meat",6,1],["Trimmed Meat",3,1],["Rough Meat",30,1],["Trimmed Meat",15,1]]}]},
+  {"key": "forestry", "ru": "Лесное ремесло", "subs": [
+   {"key": "lumber", "ru": "Древесина", "list": [["Standard Lumber",1,0],["Fine Lumber",1,0],["Superior Lumber",1,0],["Standard Lumber",6,0],["Fine Lumber",3,1],["Standard Lumber",30,1],["Standard Lumber",30,1],["Fine Lumber",15,1]]},
+   {"key": "additive", "ru": "Смеси", "list": [["Standard Additive",1,0],["Fine Additive",1,0],["Superior Additive",1,0],["Standard Additive",6,0],["Fine Additive",3,1],["Standard Additive",30,1],["Standard Additive",30,1],["Fine Additive",15,1]]}]},
+  {"key": "cloth", "ru": "Ткань", "subs": [
+   {"key": "leather", "ru": "Кожа", "list": [["Standard Leather",1,0],["Fine Leather",1,0],["Superior Leather",1,0],["Standard Leather",6,1],["Fine Leather",3,1],["Standard Leather",30,1],["Fine Leather",15,1]]},
+   {"key": "textile", "ru": "Ткани", "list": [["Standard Textile",1,0],["Fine Textile",1,0],["Superior Textile",1,0],["Standard Textile",6,1],["Fine Textile",3,1],["Standard Textile",30,1],["Standard Textile",30,1],["Fine Textile",15,1]]}]},
+  {"key": "processing", "ru": "Переработка", "subs": [
+   {"key": "gems", "ru": "Самоцветы", "list": [["Standard Archeum",1,0],["Fine Archeum",1,0],["Superior Archeum",1,0],["Arcane Sealed Chest",10,0],["Standard Archeum",6,0],["Fine Archeum",3,1],["Standard Archeum",30,1],["Standard Archeum",30,1]]},
+   {"key": "bones", "ru": "Кости", "list": [["Standard Bonecraft",1,0],["Fine Bonecraft",1,0],["Superior Bonecraft",1,0],["Standard Bonecraft",6,0],["Fine Bonecraft",3,1],["Standard Bonecraft",30,1],["Fine Bonecraft",15,1]]}]},
+  {"key": "smelting", "ru": "Плавка", "subs": [
+   {"key": "stone", "ru": "Камень", "list": [["Standard Stone",1,0],["Fine Stone",1,0],["Superior Stone",1,0],["Standard Stone",6,0],["Fine Stone",3,1],["Standard Stone",30,1],["Standard Stone",30,1],["Fine Stone",15,1]]},
+   {"key": "metal", "ru": "Металл", "list": [["Standard Ingot",1,0],["Fine Ingot",1,0],["Superior Ingot",1,0],["Standard Ingot",6,0],["Fine Ingot",3,1],["Standard Ingot",30,1],["Standard Ingot",30,1],["Fine Ingot",15,1]]}]}
+ ],
+ "known": {
+  "Rough Meat": {"ing": [[70108001,15],[70109003,5]], "fee": 100},
+  "Standard Lumber": {"ing": [[70107001,3],[70109003,5],[70100005,5]], "fee": 100},
+  "Standard Additive": {"ing": [[70102003,3],[70109003,5],[70100005,5]], "fee": 100, "note": "первый материал определён по иконке (Wild Petal), уверенность средняя"},
+  "Standard Leather": {"ing": [[70108002,15],[70109003,5],[70100005,5]], "fee": 100},
+  "Standard Textile": {"ing": [[70102002,3],[70109003,5],[70100005,5]], "fee": 100},
+  "Standard Archeum": {"ing": [[70103004,3],[70109003,5],[72000016,5]], "fee": 100},
+  "Standard Bonecraft": {"ing": [[70108003,15],[70109003,5],[72000016,5]], "fee": 100},
+  "Standard Stone": {"ing": [[70103001,3],[70109003,5],[72000016,5]], "fee": 100},
+  "Standard Ingot": {"ing": [[70103002,3],[70109003,5],[72000016,5]], "fee": 100}
+ }
+}

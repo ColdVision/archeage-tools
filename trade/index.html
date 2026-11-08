@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Торговые маршруты · ArcheAge Chronicles</title>
+<meta name="description" content="Калькулятор торговых маршрутов ArcheAge Chronicles с картой мира: прибыль по товарам и торговым постам. Данные из клиента игры. / Trade route calculator with a world map.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<meta name="color-scheme" content="dark">
+<style>
+:root{--bg:#1C1714;--card:#251E19;--ink:#E8DFD4;--mute:#9C8B7A;--line:#4A3F35;--acc:#C9A962;--acc2:#C9A962;--bad:#E07A80;--good:#8FC98F;--warn:#2E251B;--leather:#3D332B;--crimson:#8B2635}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+.wrap{max-width:1900px;margin:0 auto;padding:12px 16px}
+.wrap>.card,.wrap>.note,.wrap>#t-sub,.wrap>footer{max-width:1100px;margin-left:auto;margin-right:auto}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+header .row{position:fixed;top:12px;right:16px;z-index:40}
+header .row label>span{display:none}
+header .row select{min-height:36px;padding:4px 10px}
+h1{font-size:22px;margin:0}h2{font-size:17px;margin:0 0 8px;color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin:14px 0}
+.note{background:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--ink)}
+.mute{color:var(--mute);font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px}
+input,select,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink)}
+input[type=number]{width:110px}
+button{cursor:pointer}button.on,button:hover{border-color:var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12px;color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--card)}
+td input[type=number]{width:84px;padding:3px 5px}
+.scroll{overflow:auto;max-height:430px}
+.mapwrap{position:relative}
+.mapbox{height:72vh;min-height:460px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#111;cursor:grab}
+.mapin{position:relative}
+.mapin img.bg{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
+.mapin svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pin{position:absolute;width:34px;height:34px;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;filter:drop-shadow(0 2px 3px #000b)}
+.pin img{width:100%;height:100%;display:block;pointer-events:none}
+.pin.sel,.pin.dst{filter:drop-shadow(0 0 7px #ffd34d) drop-shadow(0 0 2px #ffd34d);z-index:3}
+.pin.org{filter:drop-shadow(0 0 7px #7bd08a) drop-shadow(0 0 2px #7bd08a);z-index:4}
+.pin span{position:absolute;left:50%;top:100%;transform:translateX(-50%);font:600 12px/1.1 Georgia,serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none}
+.side{position:absolute;left:10px;top:10px;bottom:10px;width:340px;max-width:calc(100% - 20px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;box-shadow:0 4px 18px #0008;z-index:5;cursor:default}
+.side h3{margin:0 0 6px;font-size:16px;color:var(--acc)}
+.side .x{float:right;padding:0 8px}
+.glist button{display:block;width:100%;text-align:left;margin:3px 0}
+.glist button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.dest{display:grid;grid-template-columns:1fr auto;gap:2px 8px;border-top:1px solid var(--line);padding:6px 0;cursor:pointer}
+.dest.on{background:var(--warn)}
+.dest input{width:80px;padding:2px 5px}
+.dest .sm{grid-column:1 / -1;font-size:12px;color:var(--mute)}
+.chips button{margin:2px 4px 2px 0;padding:2px 8px;font-size:12px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:10px}
+.res div{border:1px solid var(--line);border-radius:6px;padding:8px}.res b{display:block;font-size:19px}
+footer{font-size:13px;color:var(--mute);padding:10px 0 30px}footer a{color:var(--acc2)}
+details summary{cursor:pointer;color:var(--acc)}
+
+.app{display:flex;height:calc(100vh - 56px);min-height:600px;margin:10px calc(50% - 50vw);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:#000}
+.mapbox{scrollbar-width:none}.mapbox::-webkit-scrollbar{display:none}
+#left{width:370px;flex:none;overflow:auto;background:#0b0a09;padding:16px 18px;border-right:1px solid var(--line)}
+#mapcol{position:relative;flex:1;min-width:0}
+#mapcol .mapbox{height:100%;min-height:0;border:0;border-radius:0}
+.lh{font:700 38px/1.05 "Bebas Neue","Oswald",Impact,"Arial Narrow",sans-serif;letter-spacing:.5px;text-transform:uppercase;margin:4px 0 10px;color:#fff}
+.lh.sm{font-size:32px;margin-top:18px}
+.ddb{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#1d1b17;padding:6px 10px}
+.ddb span{flex:1}.ddb i{color:var(--mute);font-style:normal}
+.dd{position:relative}
+.ddl{position:absolute;left:0;right:0;top:100%;z-index:20;background:#15130f;border:1px solid var(--line);border-radius:6px;max-height:60vh;overflow:auto;box-shadow:0 8px 24px #000c}
+.ddl input{width:calc(100% - 12px);margin:6px}
+.ddl .gh{font-size:12px;color:var(--mute);padding:6px 10px 2px;text-transform:uppercase}
+.ddl button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:4px 10px}
+.ddl button:hover{background:#25221c}
+.mres{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mute);margin-top:1px}.mres .ic{width:16px;height:16px}
+img.ic{width:34px;height:34px;object-fit:contain;flex:none}
+img.ic.s{width:26px;height:26px}
+.gmeta{color:var(--mute);font-size:13px;margin:6px 2px}
+.mats{display:flex;flex-wrap:wrap;gap:8px}
+.mat{width:78px;text-align:center;font-size:11px;color:var(--mute);line-height:1.15}
+.mat img{display:block;margin:0 auto 2px;width:44px;height:44px;object-fit:contain}.mat b{color:var(--ink)}
+.calcrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.calcrow label{flex:1;min-width:90px}.calcrow input{width:100%}
+#left .dest{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:10px 4px;cursor:pointer}
+#left .dest .dl{flex:1;min-width:0}
+#left .dest img.big{width:56px;height:56px;object-fit:contain;flex:none}
+details.calc{margin-top:10px}details.calc summary{cursor:pointer;color:var(--acc);font-size:13px}
+#left .dest.on{background:#241f12}
+#left .dest:hover{background:#1c1913}
+.dn{font:700 30px/1.05 "Bebas Neue","Oswald",Impact,"Arial Narrow",sans-serif;text-transform:uppercase;color:#fff;letter-spacing:.4px}
+.rw{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0;font-size:14px}
+.rw .arrow{color:var(--mute)}
+#left .sm{font-size:12px;color:var(--mute)}
+#left .dest input{width:90px;padding:2px 5px;margin-top:4px}
+.maptools{position:absolute;right:10px;top:10px;z-index:6;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.maptools .bar button{background:#111d;padding:4px 10px}
+.mt-body{background:#0b0a09ee;border:1px solid var(--line);border-radius:8px;padding:10px;width:290px}
+.mapinfo{position:absolute;left:12px;top:10px;z-index:6;background:#000a;color:#fff;border-radius:6px;padding:3px 9px;font-size:13px}
+.mapinfo:empty{display:none}
+@media (max-width:820px){.app{flex-direction:column;height:auto}#left{width:auto;max-height:55vh}#mapcol{height:70vh}}
+
+/* ===== Academia: махагон / дуб / пергамент / латунь (ui-ux-pro-max, style 79) ===== */
+:root{--font-head:"Cormorant Garamond","Palatino Linotype","Book Antiqua",Georgia,serif;--font-body:Georgia,"Palatino Linotype",Cambria,serif}
+body{font-family:var(--font-body);font-size:16px;line-height:1.5;background:var(--bg);color:var(--ink)}
+h1{font-family:var(--font-head);font-size:28px;font-weight:600;letter-spacing:.08em;color:var(--acc);text-shadow:0 1px 2px #000}
+h2{font-family:var(--font-head);font-size:22px;font-weight:600;letter-spacing:.06em;color:var(--acc)}
+.card{border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,.4)}
+.note{background:var(--warn);border-color:var(--line);color:var(--mute)}
+input,select,button,textarea{font-family:inherit;border-radius:4px;background:var(--leather);color:var(--ink);border:1px solid var(--line)}
+button{min-height:44px;padding:6px 14px;border-color:var(--acc);background:var(--card);transition:background .2s ease,border-color .2s ease}
+button:hover{background:var(--leather)}
+input,select{min-height:36px}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.lh{font-family:var(--font-head);font-size:24px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin:6px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);text-shadow:0 1px 2px #000}
+.lh.sm{font-size:20px;margin-top:20px}
+.dn{font-family:var(--font-head);font-size:26px;font-weight:700;letter-spacing:.03em;text-transform:none;color:var(--ink);text-shadow:0 1px 2px #000}
+#left{background:var(--bg);border-right:1px solid var(--line);box-shadow:inset -8px 0 14px -10px #000}
+.ddb{min-height:48px;background:var(--leather);border-color:var(--acc);font-size:16px}
+.ddl{background:var(--card);border-color:var(--acc);box-shadow:0 8px 24px #000c}
+.ddl .gh{color:var(--acc);letter-spacing:.1em}
+.ddl button{min-height:44px;border:0;background:transparent}.ddl button:hover{background:var(--leather)}
+.ddl .clr{color:var(--bad);border-bottom:1px solid var(--line)!important}
+.gmeta{font-style:italic;color:var(--mute)}
+.mat{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:6px 4px;width:92px}
+#left .dest{min-height:72px;border-top:1px solid var(--line);border-left:3px solid transparent;padding:10px 8px;transition:background .2s ease,border-color .2s ease}
+#left .dest:hover{background:var(--card)}
+#left .dest.on{background:var(--warn);border-left-color:var(--acc)}
+#left .dest img.big{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:3px}
+#left .sm,.sm{color:var(--mute);font-size:13px}
+.pin span{font-family:var(--font-head);font-weight:700;font-size:14px;letter-spacing:.04em}
+.mt-body{background:var(--bg);border-color:var(--acc)}
+.maptools .bar button{background:rgba(28,23,20,.92)}
+.mapinfo{background:rgba(28,23,20,.92);border:1px solid var(--line);color:var(--ink);font-style:italic}
+#mapcol::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 30px rgba(0,0,0,.6);z-index:2}
+.maptools,.mapinfo{z-index:6}
+th{background:var(--card);color:var(--acc);letter-spacing:.06em}
+td,th{border-bottom-color:var(--line)}
+footer a,details summary{color:var(--acc)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Плавные анимации ===== */
+:root{--ease:cubic-bezier(.22,.61,.36,1);--t-fast:.18s;--t-med:.32s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes ddOpen{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pinDrop{from{opacity:0;transform:translate(-50%,-160%)}to{opacity:1;transform:translate(-50%,-100%)}}
+@keyframes march{to{stroke-dashoffset:-26}}
+@keyframes sweep{from{background-position:-200% 0}to{background-position:200% 0}}
+body{animation:fadeIn .5s var(--ease) both}
+.card{animation:fadeUp var(--t-med) var(--ease) both;transition:box-shadow var(--t-med) var(--ease),transform var(--t-med) var(--ease)}
+.card:hover{box-shadow:0 8px 16px rgba(0,0,0,.5)}
+#left{animation:fadeIn .45s var(--ease) both}
+#left .lh,#left .ddb,#left .gmeta{animation:fadeUp var(--t-med) var(--ease) both}
+#left .mat{animation:popIn var(--t-med) var(--ease) both;transition:transform var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease)}
+#left .mat:hover{transform:translateY(-2px);border-color:var(--acc)}
+#left .mat:nth-child(2){animation-delay:.04s}#left .mat:nth-child(3){animation-delay:.08s}#left .mat:nth-child(4){animation-delay:.12s}#left .mat:nth-child(5){animation-delay:.16s}
+#left .dest{animation:fadeUp var(--t-med) var(--ease) both}
+#left .dest:nth-of-type(1){animation-delay:.02s}#left .dest:nth-of-type(2){animation-delay:.06s}#left .dest:nth-of-type(3){animation-delay:.1s}#left .dest:nth-of-type(4){animation-delay:.14s}#left .dest:nth-of-type(5){animation-delay:.18s}#left .dest:nth-of-type(6){animation-delay:.22s}
+#left .dest img.big{transition:transform var(--t-med) var(--ease)}
+#left .dest:hover img.big,#left .dest.on img.big{transform:scale(1.08) rotate(-2deg)}
+.ddl{animation:ddOpen var(--t-fast) var(--ease) both;transform-origin:top center}
+.ddb i{display:inline-block;transition:transform var(--t-fast) var(--ease)}
+.ddb[aria-expanded=true] i{transform:rotate(180deg)}
+button,input,select,.ddb{transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+button:active{transform:scale(.97)}
+.pin{transition:filter var(--t-med) var(--ease),scale var(--t-fast) var(--ease)}
+.pin:hover{scale:1.15;z-index:5}
+.pin.dst,.pin.org{animation:none}
+body.boot .pin{animation:pinDrop .5s var(--ease) both}
+body.boot .pin:nth-child(2){animation-delay:.08s}body.boot .pin:nth-child(3){animation-delay:.16s}body.boot .pin:nth-child(4){animation-delay:.24s}body.boot .pin:nth-child(5){animation-delay:.32s}body.boot .pin:nth-child(6){animation-delay:.4s}body.boot .pin:nth-child(7){animation-delay:.48s}
+.mapin svg polyline{animation:march 1.2s linear infinite}
+.mapinfo,.maptools{animation:fadeIn .5s var(--ease) .2s both}
+tbody tr{transition:background var(--t-fast) var(--ease)}
+tbody tr:hover{background:rgba(201,169,98,.08)}
+a{transition:color var(--t-fast) var(--ease)}
+details>*:not(summary){animation:fadeUp var(--t-med) var(--ease) both}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* крупнее боковая панель: мелкий шрифт плохо читался на мониторе */
+@media (min-width:821px){#left{zoom:1.12;width:400px;overflow-x:hidden}}
+#left{padding:12px 14px}
+#left .lh{margin:4px 0 8px;padding-bottom:4px}#left .lh.sm{margin-top:12px}
+#left .dest{min-height:0;padding:6px 8px}
+#left .dest img.big{width:44px;height:44px}
+#left .sm,#left .gmeta,.mres,.ddl .gh,#left .mute{font-size:14px}
+.mres .ic{width:20px;height:20px}
+</style>
+<link rel="stylesheet" href="../assets/site.css?v=2">
+<link rel="stylesheet" href="../assets/design.css?v=2">
+</head>
+<body data-root="../" data-page="trade">
+<div id="aa-header"></div>
+<main class="aa-page" id="aa-main"><noscript><p class="aa-nojs">Для работы сайта нужен JavaScript. / JavaScript is required.</p></noscript>
+<div class="wrap">
+<div class="pg-h"><h1 id="t-title"></h1></div>
+
+<div class="app" id="sec-map"></div>
+</div>
+</main>
+<div id="aa-footer"></div>
+<script src="../assets/site.js?v=2"></script>
+
+<script src="../data/trade/tradedata.js"></script>
+<script src="../data/trade/roads.js"></script>
+<script>
+(function(){
+"use strict";
+var D = window.TR_DATA;
+var LS = "aa-traderoute-v1";
+
+/* ---------- тексты интерфейса ---------- */
+var T = {
+ ru:{
+  title:"Торговые маршруты ArcheAge", lang:"Названия",
+  sub:"Калькулятор торговых маршрутов ArcheAge Chronicles. Список постов, товаров и их «родных» постов взят из данных игры (сборка ",
+  note:"В клиенте игры нет цен на торговые товары, налогов, расстояний и времени в пути — эти таблицы приходят с сервера. Поэтому цены, налог и время вы вводите сами; всё сохраняется в вашем браузере. Ничего не отправляется в сеть.",
+  calc:"Расчёт маршрута", good:"Товар", from:"Откуда (пост происхождения)", to:"Куда", qty:"Количество, шт.", tax:"Налог / комиссия, %", extra:"Прочие расходы на рейс, зол.",
+  buy:"Цена покупки, зол.", sell:"Цена продажи, зол.", pickGood:"— выберите товар —", pickTo:"— выберите пост —",
+  q_use:"Учитывать надбавку качества (гипотеза)", q_group:"Группа качества", q_time:"Время в пути, мин",
+  q_hint:"Таблица качества есть в игре, но её смысл (на что именно действует коэффициент) клиент не раскрывает. Если включить, коэффициент прибавляется к цене продажи как %.",
+  r_rev:"Выручка", r_tax:"Налог", r_cost:"Затраты", r_profit:"Прибыль", r_roi:"Доходность", r_unit:"Прибыль за штуку", r_hour:"Прибыль в час", r_q:"Качество на прибытии",
+  needPrices:"Введите цену покупки и цену продажи.",
+  prices:"Цены", prices_hint:"Покупка — в посте происхождения (так в игре). Продажа — по каждому посту назначения. Пустые клетки в расчёт не идут.",
+  setPct:"Заполнить цены продажи, % от покупки:", apply:"Применить", reset:"Сбросить цены",
+  routes:"Сравнение маршрутов", sortBy:"Сортировка", s_profit:"по прибыли", s_roi:"по доходности", s_hour:"по прибыли в час", limit:"Показывать",
+  c_good:"Товар", c_route:"Маршрут", c_buy:"Покупка", c_sell:"Продажа", c_unit:"За шт.", c_profit:"Прибыль", c_roi:"ROI", c_hour:"В час", c_min:"Время, мин",
+  noRoutes:"Нет маршрутов: введите цены покупки и продажи в таблице выше.",
+  times:"Время в пути между постами, мин (необязательно)", times_hint:"Нужно только для «прибыли в час» и качества. Время одинаково в обе стороны.",
+  ref:"Данные игры", ref_posts:"Торговые посты", company:"Компания", goodsN:"товаров",
+  ref_q:"Группы качества (TradeGoodQuality): состояние, через сколько мин наступает, коэффициент, б.п.",
+  ref_p:"Шаблоны спроса (TradePatternDesc)", p_cls:{1:"резкий рост",2:"рост",3:"стабильно",4:"падение",5:"резкое падение"},
+  ref_miss:"Чего нет в клиенте (данные на сервере): ",
+  export:"Экспорт цен", import:"Импорт цен", exported:"Скопируйте JSON:", importAsk:"Вставьте JSON:",
+  voucher:"Сертификат", state:{Better:"Лучшее",Good:"Хорошее",Normal:"Обычное",Bad:"Плохое"},
+  map:"Карта", map_hint:"Подложка — карта мира из файлов игры. Координат торговых постов в клиенте нет (они на сервере), поэтому поставьте посты сами: выберите пост и щёлкните по карте; перетаскивайте метки для уточнения. Расстояние считается по прямой.",
+  map_post:"Пост", map_speed:"Скорость, м/мин (для времени в пути)", map_clear:"Убрать метки", min:"мин",
+  map_dist:"Расстояние по прямой", map_road:"Расстояние по дороге", map_m:"м", map_time:"Время в пути (по скорости)", map_none:"Выберите товар и пункт назначения в расчёте, поставьте оба поста на карте.",
+  p_clrgood:"Снять выбор товара", p_pick:"Выберите товар:", p_deliver:"Варианты сдачи:", p_search:"Поиск", p_exch:"Обмен ресурсов", p_tools:"Разметка", p_export:"Копировать позиции",
+  p_open:"Выберите торговый пост на карте", p_goods:"Торговые паки этого поста", p_buy:"Цена покупки, зол.", p_dest:"Куда сдать", p_sell:"Цена сдачи, зол./шт.", p_get:"Получите", p_gold:"зол.",
+  p_note:"Бонусы за сдачу, кроме золота, клиент игры не содержит (серверные данные) — вводите цену сдачи вручную.", p_place:"Режим расстановки постов", p_unplaced:"Не размещены:", p_close:"Закрыть",
+  p_cost:"Материалы (себестоимость), зол.", p_pack:"Упаковка", p_base:"Базовая стоимость", p_fresh:"Свежесть", p_h:"ч", p_mats:"Материалы", p_own:"Своя оценка, зол./шт.", p_auto:"авто",
+  p_srcnote:"Экономика (база, упаковка, материалы, выплаты) взята с questlog.gg, не из клиента игры; возможны неточности.",
+  p_qty:"Кол-во", p_profit:"Прибыль", p_noPos:"пост не размещён на карте", p_nogoods:"Нет товаров",
+  map_unit:"Масштаб подложки 1 px ≈ 0,25 м принят по данным WorldMapTable (ячейка 25 500 ед. = 1024 px; единицы приняты за сантиметры — допущение).",
+  foot:"Автор: ColdVision"
+ },
+ en:{
+  title:"ArcheAge Trade Route", lang:"Names",
+  sub:"Trade route calculator for ArcheAge Chronicles. Posts, goods and their home posts come from game data (build ",
+  note:"The game client has no trade good prices, taxes, distances or travel times — those tables are delivered by the server. Enter prices, tax and travel time yourself; everything is stored in your browser only. Nothing is sent over the network.",
+  calc:"Route calculation", good:"Trade good", from:"From (home post)", to:"To", qty:"Quantity", tax:"Tax / fee, %", extra:"Other costs per trip, gold",
+  buy:"Buy price, gold", sell:"Sell price, gold", pickGood:"— choose a good —", pickTo:"— choose a post —",
+  q_use:"Apply quality bonus (hypothesis)", q_group:"Quality group", q_time:"Travel time, min",
+  q_hint:"The quality table exists in the game data, but the client does not say what the factor applies to. If enabled, the factor is added to the sell price as a %.",
+  r_rev:"Revenue", r_tax:"Tax", r_cost:"Cost", r_profit:"Profit", r_roi:"ROI", r_unit:"Profit per unit", r_hour:"Profit per hour", r_q:"Quality on arrival",
+  needPrices:"Enter a buy price and a sell price.",
+  prices:"Prices", prices_hint:"Buy at the home post (as in game). Sell price per destination post. Empty cells are ignored.",
+  setPct:"Fill sell prices, % of buy price:", apply:"Apply", reset:"Clear prices",
+  routes:"Route comparison", sortBy:"Sort", s_profit:"by profit", s_roi:"by ROI", s_hour:"by profit per hour", limit:"Show",
+  c_good:"Good", c_route:"Route", c_buy:"Buy", c_sell:"Sell", c_unit:"Per unit", c_profit:"Profit", c_roi:"ROI", c_hour:"Per hour", c_min:"Time, min",
+  noRoutes:"No routes yet: enter buy and sell prices in the table above.",
+  times:"Travel time between posts, min (optional)", times_hint:"Only used for profit per hour and quality. Same both ways.",
+  ref:"Game data", ref_posts:"Trading posts", company:"Company", goodsN:"goods",
+  ref_q:"Quality groups (TradeGoodQuality): state, minutes until reached, factor, bp",
+  ref_p:"Demand patterns (TradePatternDesc)", p_cls:{1:"sharp rise",2:"rise",3:"stable",4:"fall",5:"sharp fall"},
+  ref_miss:"Not in the client (server-side): ",
+  export:"Export prices", import:"Import prices", exported:"Copy JSON:", importAsk:"Paste JSON:",
+  voucher:"Certificate", state:{Better:"Best",Good:"Good",Normal:"Normal",Bad:"Bad"},
+  map:"Map", map_hint:"The backdrop is the world map from game files. The client has no trading post coordinates (they are server-side), so place the posts yourself: pick a post and click the map; drag pins to adjust. Distance is a straight line.",
+  map_post:"Post", map_speed:"Speed, m/min (for travel time)", map_clear:"Clear pins", min:"min",
+  map_dist:"Straight-line distance", map_road:"Distance by road", map_m:"m", map_time:"Travel time (by speed)", map_none:"Pick a good and a destination in the calculator, place both posts on the map.",
+  p_clrgood:"Clear selection", p_pick:"Choose a trade good:", p_deliver:"Delivery options:", p_search:"Search", p_exch:"Resource exchange", p_tools:"Tools", p_export:"Copy positions",
+  p_open:"Pick a trading post on the map", p_goods:"Trade packs of this post", p_buy:"Buy price, gold", p_dest:"Deliver to", p_sell:"Delivery price, gold/unit", p_get:"You get", p_gold:"gold",
+  p_note:"The game client has no delivery bonuses other than gold (server data) — enter the delivery price manually.", p_place:"Post placing mode", p_unplaced:"Not placed:", p_close:"Close",
+  p_cost:"Materials (cost), gold", p_pack:"Packing", p_base:"Base value", p_fresh:"Freshness", p_h:"h", p_mats:"Materials", p_own:"Own estimate, gold/unit", p_auto:"auto",
+  p_srcnote:"Economy (base, packing, materials, payouts) comes from questlog.gg, not the game client; may be inaccurate.",
+  p_qty:"Qty", p_profit:"Profit", p_noPos:"post is not placed on the map", p_nogoods:"No goods",
+  map_unit:"Backdrop scale 1 px ≈ 0.25 m from WorldMapTable (cell 25,500 units = 1024 px; units assumed to be centimetres).",
+  foot:"Author: ColdVision"
+ }
+};
+
+/* ---------- состояние ---------- */
+var S = {lang:"ru", prices:{}, times:{}, c:{good:"", to:"", qty:1, tax:0, extra:0, qUse:false, qGroup:"100", qTime:0}, r:{sort:"profit", limit:30}, pos:{"1100":[0.5719,0.6576],"1000":[0.6365,0.7151],"2000":[0.3978,0.3994],"2100":[0.3605,0.6465],"3000":[0.581,0.4318],"3100":[0.5806,0.2612]}, speed:"", zoom:0.43, sel:"", open:"", place:false, dd:false, q:"", fp:"", tools:false};
+var DEF_POS=JSON.parse(JSON.stringify(S.pos));
+try{ var sv = JSON.parse(localStorage.getItem(LS)||"null"); if(sv){ for(var k in sv){ if(typeof sv[k]==="object" && !Array.isArray(sv[k])) Object.assign(S[k]=S[k]||{}, sv[k]); else S[k]=sv[k]; } } }catch(e){}
+S.lang=AA.lang; S.pos=JSON.parse(JSON.stringify(DEF_POS)); S.place=false; S.tools=false; S.sel=""; S.speed=S.speed||""; S.c.good=""; S.c.to=""; S.fp=""; S.dd=false; S.q=""; /* страница всегда открывается без выбранного товара */
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+
+var postById = {}, goodById = {};
+D.posts.forEach(function(p){ postById[p.id]=p; });
+D.goods.forEach(function(g){ goodById[g.id]=g; });
+function tr(){ return T[S.lang]; }
+function nm(o){ return (o && (o[S.lang]||o.ru||o.en)) || "?"; }
+function num(v){ var n = parseFloat(v); return isFinite(n)?n:null; }
+function fmt(n,d){ if(n==null||!isFinite(n)) return "—"; return n.toLocaleString(S.lang==="ru"?"ru-RU":"en-US",{maximumFractionDigits:d==null?0:d}); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function cls(n){ return n>0?"pos":(n<0?"neg":""); }
+function econOf(g){ return g && g.econ || null; }
+function autoSell(g,pid){ var e=econOf(g), v=e&&e.pay[pid]; return (v&&v.rate!=null) ? Math.round(e.base*v.rate/100) : null; }
+function sellOf(g,pid){ var m=num(pr(g.id).sell[pid]); return m!=null ? m : autoSell(g,pid); }
+function buyOf(g){ var b=num(pr(g.id).buy), e=econOf(g); if(!e) return b; return (b==null?0:b)+(e.pack||0); }
+function itemTxt(it){ return nm(it.name)+" ×"+it.count; }
+function pr(gid){ return S.prices[gid]||(S.prices[gid]={buy:"",sell:{}}); }
+function timeKey(a,b){ return a<b ? a+"-"+b : b+"-"+a; }
+var MAP_W=4914, MAP_H=2984, M_PER_PX=25500/1024/100, FULL_W=19656, FULL_H=11936; // размеры подложки и обрезки (tools/build_map.py)
+function roadRoute(a,b){ var R=window.TR_ROADS; if(!R||a==null||b==null||String(a)===String(b)) return null; a=+a; b=+b;
+  var k=Math.min(a,b)+"-"+Math.max(a,b), r=R.routes[k]; if(!r) return null;
+  var pa=S.pos[a], pb=S.pos[b], da=R.pos[a], db=R.pos[b];
+  if(!pa||!pb||!da||!db||pa[0]!==da[0]||pa[1]!==da[1]||pb[0]!==db[0]||pb[1]!==db[1]) return null; /* пины сдвинуты — маршрут по дорогам неактуален */
+  return a<b ? r : r.slice().reverse(); }
+function routeLen(r){ var L=0; for(var i=1;i<r.length;i++) L+=Math.hypot((r[i][0]-r[i-1][0])*FULL_W,(r[i][1]-r[i-1][1])*FULL_H); return L*M_PER_PX; }
+function mapDist(a,b){ var p=S.pos[a], q=S.pos[b]; if(!p||!q) return null; var rr=roadRoute(a,b); if(rr) return routeLen(rr); return Math.hypot((p[0]-q[0])*FULL_W,(p[1]-q[1])*FULL_H)*M_PER_PX; }
+function travel(a,b){ var m=num(S.times[timeKey(a,b)]); if(m!=null) return m; var d=mapDist(a,b), v=num(S.speed); return (d!=null && v>0) ? d/v : null; }
+
+/* ---------- расчёт ---------- */
+function qualityAt(group, minutes){
+  var st = D.quality[group]; if(!st) return null;
+  var cur = st[0]; // Better — начальное состояние
+  st.forEach(function(s){ if(s.afterMs!=null && minutes*60000 >= s.afterMs) cur = s; });
+  return cur;
+}
+// Возвращает {rev,tax,cost,profit,roi,unit,perHour,q} или null, если нет цен
+function calc(buy, sell, qty, taxPct, extra, mins){
+  if(buy==null || sell==null) return null;
+  var q = null, bonus = 0;
+  if(S.c.qUse){ q = qualityAt(S.c.qGroup, mins!=null?mins:(num(S.c.qTime)||0)); if(q) bonus = q.bp/10000; }
+  var rev = sell*(1+bonus)*qty, tax = rev*taxPct/100, cost = buy*qty + extra;
+  var profit = rev - tax - cost;
+  return {rev:rev, tax:tax, cost:cost, profit:profit, roi: cost>0?profit/cost*100:null, unit: qty>0?profit/qty:null,
+          perHour: mins>0 ? profit/(mins/60) : null, q:q};
+}
+function common(){ return {qty: Math.max(1, num(S.c.qty)||1), tax: num(S.c.tax)||0, extra: num(S.c.extra)||0}; }
+
+/* ---------- отрисовка ---------- */
+function goodOpt(g,sel){ return '<option value="'+g.id+'"'+(g.id==sel?" selected":"")+'>'+esc(nm(g.name))+'</option>'; }
+function postOpt(p,sel){ return '<option value="'+p.id+'"'+(p.id==sel?" selected":"")+'>'+esc(nm(p.name))+'</option>'; }
+
+function renderCalc(){
+  if(!document.getElementById("sec-calc")) return;
+  var t = tr(), c = S.c, g = goodById[c.good], origin = g?postById[g.origin]:null;
+  var h = '<h2>'+t.calc+'</h2><div class="row">'
+   +'<label>'+t.good+'<select id="c-good"><option value="">'+t.pickGood+'</option>'+D.goods.map(function(x){return goodOpt(x,c.good);}).join("")+'</select></label>'
+   +'<label>'+t.from+'<select id="c-from" disabled>'+(origin?postOpt(origin,origin.id):'<option>—</option>')+'</select></label>'
+   +'<label>'+t.to+'<select id="c-to"><option value="">'+t.pickTo+'</option>'+D.posts.filter(function(p){return !origin||p.id!==origin.id;}).map(function(p){return postOpt(p,c.to);}).join("")+'</select></label>'
+   +'<label>'+t.qty+'<input type="number" id="c-qty" min="1" value="'+esc(c.qty)+'"></label>'
+   +'<label>'+t.tax+'<input type="number" id="c-tax" min="0" step="0.1" value="'+esc(c.tax)+'"></label>'
+   +'<label>'+t.extra+'<input type="number" id="c-extra" min="0" value="'+esc(c.extra)+'"></label></div>';
+  var buy = g?num(pr(g.id).buy):null, sell = (g&&c.to)?num(pr(g.id).sell[c.to]):null;
+  h += '<div class="row" style="margin-top:8px"><label>'+t.buy+'<input type="number" id="c-buy" value="'+(buy==null?"":buy)+'"'+(g?"":" disabled")+'></label>'
+   +'<label>'+t.sell+'<input type="number" id="c-sell" value="'+(sell==null?"":sell)+'"'+(g&&c.to?"":" disabled")+'></label>'
+   +'<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="c-quse"'+(c.qUse?" checked":"")+'> '+t.q_use+'</label>'
+   +'<label>'+t.q_group+'<select id="c-qg">'+Object.keys(D.quality).map(function(k){return '<option'+(k==c.qGroup?" selected":"")+'>'+k+'</option>';}).join("")+'</select></label>'
+   +'<label>'+t.q_time+'<input type="number" id="c-qt" min="0" value="'+esc(c.qTime)+'"></label></div>'
+   +'<p class="mute">'+t.q_hint+'</p><div id="c-out"></div>';
+  document.getElementById("sec-calc").innerHTML = h;
+  bindCalc(); renderCalcOut();
+}
+function renderCalcOut(){
+  if(document.getElementById("mapin")){ drawMapOverlay(); }
+  if(!document.getElementById("c-out")) return;
+  var t = tr(), c = S.c, g = goodById[c.good], el = document.getElementById("c-out");
+  var buy = g?buyOf(g):null, sell = (g&&c.to)?sellOf(g,+c.to):null;
+  var cm = common(), mins = (g&&c.to)?travel(g.origin, +c.to):null; if(mins==null) mins = num(c.qTime);
+  var r = calc(buy, sell, cm.qty, cm.tax, cm.extra, mins);
+  if(!r){ el.innerHTML = '<p class="mute">'+t.needPrices+'</p>'; return; }
+  var cells = [[t.r_rev, fmt(r.rev)],[t.r_tax, fmt(r.tax)],[t.r_cost, fmt(r.cost)],
+    [t.r_profit, '<span class="'+cls(r.profit)+'">'+fmt(r.profit)+'</span>'],
+    [t.r_roi, r.roi==null?"—":'<span class="'+cls(r.roi)+'">'+fmt(r.roi,1)+' %</span>'],
+    [t.r_unit, fmt(r.unit,1)], [t.r_hour, r.perHour==null?"—":fmt(r.perHour)]];
+  if(r.q) cells.push([t.r_q, t.state[r.q.state]+" ("+fmt(r.q.bp/100,1)+" %)"]);
+  el.innerHTML = '<div class="res">'+cells.map(function(x){return '<div>'+x[0]+'<b>'+x[1]+'</b></div>';}).join("")+'</div>';
+}
+function bindCalc(){
+  var $ = function(id){return document.getElementById(id);};
+  $("c-good").onchange = function(){ S.c.good=this.value; S.c.to=""; save(); renderCalc(); };
+  $("c-to").onchange = function(){ S.c.to=this.value; save(); renderCalc(); };
+  [["c-qty","qty"],["c-tax","tax"],["c-extra","extra"],["c-qt","qTime"]].forEach(function(p){
+    $(p[0]).oninput = function(){ S.c[p[1]]=this.value; save(); renderCalcOut(); renderRoutes(); };
+  });
+  $("c-qg").onchange = function(){ S.c.qGroup=this.value; save(); renderCalcOut(); renderRoutes(); };
+  $("c-quse").onchange = function(){ S.c.qUse=this.checked; save(); renderCalcOut(); renderRoutes(); };
+  $("c-buy").oninput = function(){ pr(+S.c.good).buy=this.value; save(); renderCalcOut(); renderRoutes(); syncPriceCells(); };
+  $("c-sell").oninput = function(){ pr(+S.c.good).sell[S.c.to]=this.value; save(); renderCalcOut(); renderRoutes(); syncPriceCells(); };
+}
+function syncPriceCells(){ // не перерисовываем таблицу, чтобы не терять фокус; обновляем только значения
+  var g=S.c.good; if(!g) return;
+  var b=document.querySelector('[data-buy="'+g+'"]'); if(b && document.activeElement!==b) b.value=pr(g).buy;
+  document.querySelectorAll('[data-sell^="'+g+':"]').forEach(function(i){ if(document.activeElement!==i) i.value = pr(g).sell[i.dataset.sell.split(":")[1]]||""; });
+}
+
+var MIN_ZOOM=0.43; /* максимальное отдаление: остров целиком, как на эталонном скриншоте */
+function applyZoom(){ S.zoom=Math.max(MIN_ZOOM,Math.min(1.5,+S.zoom||MIN_ZOOM)); var m=document.getElementById("mapin"); if(m){ m.style.width=(MAP_W*S.zoom)+"px"; m.style.height=(MAP_H*S.zoom)+"px"; } }
+var GICO=function(id){return "../assets/trade/icons/g"+id+".png";}, IICO=function(id){return "../assets/trade/icons/i"+id+".png";};
+function ico(src,c){ return '<img class="ic'+(c?" "+c:"")+'" src="'+src+'" alt="" onerror="this.style.visibility=\'hidden\'">'; }
+
+function origin(){ var g=goodById[S.c.good]; return S.fp||(g?String(g.origin):""); }
+function drawMapOverlay(){
+  var m=document.getElementById("mapin"); if(!m) return;
+  m.querySelectorAll(".pin").forEach(function(n){ n.remove(); });
+  var g=goodById[S.c.good], org=origin(), dst=S.c.to;
+  D.posts.forEach(function(p){ var q=S.pos[p.id]; if(!q) return;
+    var d=document.createElement("div"); d.className="pin"+(String(org)===String(p.id)?" org":"")+(String(dst)===String(p.id)?" dst":"")+(S.place&&String(S.sel)===String(p.id)?" sel":""); d.dataset.id=p.id; d.title=nm(p.name);
+    d.style.left=(q[0]*100)+"%"; d.style.top=(q[1]*100)+"%"; d.innerHTML='<img src="../assets/trade/tradepost.png" alt=""><span>'+esc(shortPost(p))+'</span>'; m.appendChild(d); });
+  var svg=m.querySelector("svg"), info=document.getElementById("map-info"), t=tr();
+  svg.innerHTML=""; var from=org&&S.pos[org], to=org&&S.c.to&&S.pos[S.c.to];
+  if(from&&to){
+    var rr=roadRoute(org,S.c.to), pts=(rr||[from,to]).map(function(q){return q[0]+","+q[1];}).join(" ");
+    svg.innerHTML='<polyline points="'+pts+'" fill="none" stroke="#000" stroke-opacity=".55" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><polyline points="'+pts+'" fill="none" stroke="#C9A962" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" stroke-dasharray="8 5"/>';
+    var d=mapDist(+org,+S.c.to), mins=travel(+org,+S.c.to);
+    info.textContent=(rr?t.map_road:t.map_dist)+": "+fmt(d)+" "+t.map_m+(mins!=null?" · "+fmt(mins,1)+" "+t.min:"");
+  } else info.textContent="";
+  var un=D.posts.filter(function(p){return !S.pos[p.id];}), ue=document.getElementById("map-un");
+  if(ue) ue.innerHTML = un.length ? t.p_unplaced+' '+un.map(function(p){return '<button data-pl="'+p.id+'">'+esc(shortPost(p))+'</button>';}).join("") : "";
+}
+
+function ddItems(){
+  var t=tr(), q=(S.q||"").toLowerCase(), h="", last=null;
+  D.goods.filter(function(g){ return (!S.fp||String(g.origin)===String(S.fp)) && (!q||nm(g.name).toLowerCase().indexOf(q)>=0); })
+   .sort(function(a,b){return a.origin-b.origin||a.id-b.id;})
+   .forEach(function(g){ if(g.origin!==last){ last=g.origin; h+='<div class="gh">'+esc(nm(postById[g.origin].name))+'</div>'; }
+     var e=econOf(g), mr=e&&e.mats.filter(function(m){return m.id!==70101009 && m.id!==84010006;})[0];
+     h+='<button data-g="'+g.id+'">'+ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+(mr?'<small class="mres">'+ico(IICO(mr.id),"s")+esc(nm(mr.name))+'</small>':'')+'</span></button>'; });
+  if(S.c.good) h='<button data-g="" class="clr"><span>✕ '+t.p_clrgood+'</span></button>'+h;
+  return h || '<div class="gh">'+t.p_nogoods+'</div>';
+}
+function rewardHtml(g,pid,qty){
+  var t=tr(), e=econOf(g), pv=e&&e.pay[pid];
+  if(!pv) return '<span class="sm">—</span>';
+  if(pv.rate!=null) return '<b>'+fmt(autoSell(g,pid)*qty)+' '+t.p_gold+'</b> <span class="sm">('+fmt(pv.rate,2)+'% '+t.p_base.toLowerCase()+')</span>';
+  var ex=e.mats.filter(function(m){return m.id!==70101009 && m.id!==84010006;})[0];
+  return '<span class="sm">'+t.p_exch+':</span> '+(ex?ico(IICO(ex.id),"s")+'<span>×'+(ex.count*qty)+'</span><span class="arrow">→</span>':'')
+    +ico(IICO(pv.item.id),"s")+'<b>'+esc(nm(pv.item.name))+' ×'+(pv.item.count*qty)+'</b>';
+}
+function renderPanel(){
+  var t=tr(), el=document.getElementById("left"); if(!el) return;
+  var g=goodById[S.c.good], e=econOf(g), qty=common().qty;
+  var h='<div class="lh">'+t.p_pick+'</div><div class="dd"><button class="ddb" id="dd-b" aria-expanded="'+(S.dd?"true":"false")+'">'
+   +(g?ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+'</span>':'<span class="mute">'+t.pickGood+'</span>')+'<i>▾</i></button>'
+   +'<div class="ddl" id="dd-l" style="display:'+(S.dd?'block':'none')+'"><div id="dd-i">'+ddItems()+'</div></div></div>';
+  if(!g){ var og=origin(); if(og&&postById[og]) h+='<div class="gmeta">'+esc(nm(postById[og].name))+' · '+esc(postById[og].company)+(S.c.to&&postById[S.c.to]?' → '+esc(shortPost(postById[S.c.to])):'')+'</div>'; h+='<p class="mute" style="margin-top:14px">'+t.p_open+'</p>'; el.innerHTML=h; bindPanel(null); return; }
+  h+='<div class="gmeta">'+esc(nm(postById[g.origin].name))+' · '+esc(postById[g.origin].company)+'</div>';
+  if(e){
+    h+='<div class="mats">'+e.mats.map(function(m){ return '<div class="mat" title="'+esc(nm(m.name))+'">'+ico(IICO(m.id)).replace('class="ic"','class="ic" style="width:44px;height:44px"')+'<b>×'+(m.count*qty)+'</b><br>'+esc(nm(m.name))+'</div>'; }).join("")+'</div>';
+  }
+  h+='<div class="lh sm">'+t.p_deliver+'</div>'
+   + D.posts.filter(function(p){return p.id!==g.origin;}).map(function(p){
+       var pv=e&&e.pay[p.id], isItem=pv&&pv.item;
+       return '<div class="dest'+(String(S.c.to)===String(p.id)?' on':'')+'" data-to="'+p.id+'"><div class="dl"><div class="dn">'+esc(shortPost(p))+'</div><div class="rw" data-rw="'+p.id+'">'+rewardHtml(g,p.id,qty)+'</div>'
+        +'<div class="sm" data-meta="'+p.id+'"></div>'
+        +'</div>'
+        +(pv?'<img class="big" src="'+(pv.item?IICO(pv.item.id):'../assets/trade/icons/gold.png')+'" alt="" onerror="this.style.visibility=\'hidden\'">':'')+'</div>'; }).join("")
+   ;
+  el.innerHTML=h; bindPanel(g); panelRes();
+}
+function bindPanel(g){
+  var el=document.getElementById("left"), $=function(id){return document.getElementById(id);};
+  $("dd-b").onclick=function(){ if(S.dd){ S.dd=false; if(S.fp){ S.fp=""; save(); renderPanel(); return; } $("dd-l").style.display="none"; } else { S.dd=true; $("dd-l").style.display="block"; $("dd-b").setAttribute("aria-expanded","true"); } };
+  $("dd-i").onclick=function(ev){ var b=ev.target.closest("[data-g]"); if(!b) return; var ng=goodById[b.dataset.g]; S.c.good=b.dataset.g; if(ng) S.fp=String(ng.origin); if(String(S.c.to)===String(S.fp)) S.c.to=""; S.dd=false; S.q=""; save(); renderPanel(); renderCalc(); drawMapOverlay(); };
+  if(!g) return;
+  el.querySelectorAll(".dest").forEach(function(d){ d.onclick=function(e){ if(e.target.tagName==="INPUT") return; S.c.to=(String(S.c.to)===String(d.dataset.to))?"":d.dataset.to; save(); el.querySelectorAll(".dest").forEach(function(x){x.classList.toggle("on",String(S.c.to)===String(x.dataset.to));}); renderCalc(); drawMapOverlay(); }; });
+}
+function panelRes(){
+  var t=tr(), el=document.getElementById("left"), g=goodById[S.c.good]; if(!el||!g) return;
+  var P=postById[g.origin], cm=common(), buy=buyOf(g);
+  D.posts.forEach(function(p){ if(p.id===P.id) return;
+    var mt=el.querySelector('[data-meta="'+p.id+'"]'); if(!mt) return;
+    var mins=travel(P.id,p.id), d=mapDist(P.id,p.id), sell=sellOf(g,p.id), c=calc(buy,sell,cm.qty,cm.tax,cm.extra,mins);
+    mt.innerHTML=(c?'<b class="'+cls(c.profit)+'">'+t.p_profit+' '+fmt(c.profit)+'</b>'+(d!=null?' · ':''):'')+(d!=null? fmt(d)+' '+t.map_m+(mins!=null?' · '+fmt(mins,1)+' '+t.min:'') : "");
+  });
+}
+function renderMap(){
+  var t=tr(), el=document.getElementById("sec-map");
+  el.innerHTML='<aside id="left"></aside><div id="mapcol"><div class="mapinfo" id="map-info"></div>'
+   +'<div class="maptools"><div class="bar"><button id="map-zi" aria-label="+">＋</button> <button id="map-zo" aria-label="-">－</button></div></div>'
+   +'<div class="mapbox" id="mapbox"><div class="mapin" id="mapin"><img class="bg" src="../assets/trade/worldmap.jpg" alt="" draggable="false"><svg viewBox="0 0 1 1" preserveAspectRatio="none"></svg></div></div></div>';
+  applyZoom(); drawMapOverlay(); renderPanel();
+  var box=document.getElementById("mapbox"), inner=document.getElementById("mapin");
+  function zoomTo(z){ var cx=(box.scrollLeft+box.clientWidth/2)/S.zoom, cy=(box.scrollTop+box.clientHeight/2)/S.zoom; S.zoom=Math.max(MIN_ZOOM,Math.min(1.5,z)); applyZoom(); box.scrollLeft=cx*S.zoom-box.clientWidth/2; box.scrollTop=cy*S.zoom-box.clientHeight/2; save(); }
+  document.getElementById("map-zi").onclick=function(){ zoomTo(S.zoom*1.4); };
+  document.getElementById("map-zo").onclick=function(){ zoomTo(S.zoom/1.4); };
+  box.addEventListener("wheel",function(e){ e.preventDefault(); zoomTo(S.zoom*(e.deltaY<0?1.2:1/1.2)); },{passive:false});
+  function toRel(e){ var r=inner.getBoundingClientRect(); return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]; }
+  var drag=null;
+  box.addEventListener("pointerdown",function(e){
+    var pin=e.target.closest&&e.target.closest(".pin");
+    drag={pin:pin,x:e.clientX,y:e.clientY,sl:box.scrollLeft,st:box.scrollTop,moved:false}; box.setPointerCapture(e.pointerId); });
+  box.addEventListener("pointermove",function(e){
+    if(!drag) return; var dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>4) drag.moved=true; if(!drag.moved) return;
+    if(drag.pin && S.place){ var id=drag.pin.dataset.id; S.pos[id]=toRel(e); drag.pin.style.left=(S.pos[id][0]*100)+"%"; drag.pin.style.top=(S.pos[id][1]*100)+"%"; }
+    else { box.scrollLeft=drag.sl-dx; box.scrollTop=drag.st-dy; } });
+  box.addEventListener("pointerup",function(e){
+    if(!drag) return; var d=drag; drag=null;
+    if(!d.moved){
+      if(d.pin){
+        var pid=d.pin.dataset.id, og=origin();
+        if(!og){ S.fp=pid; S.c.good=""; S.c.to=""; S.dd=true; S.q=""; }                 /* 1-й клик: пост-источник, список его паков */
+        else if(String(og)===String(pid)){ S.fp=""; S.c.good=""; S.c.to=""; S.dd=false; S.q=""; } /* повторный клик по источнику: сброс */
+        else { S.fp=og; S.c.to=(String(S.c.to)===String(pid))?"":pid; S.dd=false; }           /* клик по другому посту: маршрут */
+      }
+      else if(S.place && S.sel){ S.pos[S.sel]=toRel(e); }
+    }
+    save(); drawMapOverlay(); renderPanel(); renderRoutes(); renderCalc(); });
+}
+document.addEventListener("click",function(e){ if(S.dd && !e.target.closest(".dd") && !e.target.closest(".pin")){ S.dd=false; var l=document.getElementById("dd-l"); if(l) l.style.display="none"; } });
+
+function renderPrices(){
+  if(!document.getElementById("sec-prices")) return;
+  var t = tr();
+  var h = '<h2>'+t.prices+'</h2><p class="mute">'+t.prices_hint+'</p>'
+   +'<div class="row"><label>'+t.setPct+'<input type="number" id="pct" value="110" style="width:80px"></label>'
+   +'<button id="pct-go">'+t.apply+'</button><button id="pr-reset">'+t.reset+'</button><button id="pr-exp">'+t.export+'</button><button id="pr-imp">'+t.import+'</button></div>'
+   +'<div class="scroll"><table id="ptable"><thead><tr><th>'+t.c_good+'</th><th>'+t.from+'</th><th>'+t.buy+'</th>'
+   + D.posts.map(function(p){return '<th>'+esc(shortPost(p))+'</th>';}).join("")+'</tr></thead><tbody>'
+   + D.goods.map(function(g){
+      var o = postById[g.origin];
+      return '<tr><td>'+esc(nm(g.name))+'</td><td>'+esc(shortPost(o))+'</td>'
+       +'<td><input type="number" data-buy="'+g.id+'" value="'+esc(pr(g.id).buy)+'"></td>'
+       + D.posts.map(function(p){
+          return p.id===g.origin ? '<td class="mute">—</td>' : '<td><input type="number" data-sell="'+g.id+':'+p.id+'" value="'+esc(pr(g.id).sell[p.id]||"")+'"></td>';
+        }).join("")+'</tr>';
+     }).join("")+'</tbody></table></div><div id="io"></div>';
+  var s = document.getElementById("sec-prices"); s.innerHTML = h;
+  s.querySelector("#ptable").addEventListener("input", function(e){
+    var d = e.target.dataset;
+    if(d.buy) pr(d.buy).buy = e.target.value;
+    else if(d.sell){ var a=d.sell.split(":"); pr(a[0]).sell[a[1]] = e.target.value; }
+    save(); renderRoutes(); renderCalcOut();
+    var cb=document.getElementById("c-buy"), cs=document.getElementById("c-sell"), g=goodById[S.c.good];
+    if(cb && g && document.activeElement!==cb){ cb.value = pr(g.id).buy; } if(cs && g && S.c.to && document.activeElement!==cs){ cs.value = pr(g.id).sell[S.c.to]||""; }
+  });
+  document.getElementById("pct-go").onclick = function(){
+    var k = num(document.getElementById("pct").value); if(k==null) return;
+    D.goods.forEach(function(g){ var b=num(pr(g.id).buy); if(b==null) return; D.posts.forEach(function(p){ if(p.id!==g.origin) pr(g.id).sell[p.id] = Math.round(b*k/100); }); });
+    save(); renderAll();
+  };
+  document.getElementById("pr-reset").onclick = function(){ S.prices={}; save(); renderAll(); };
+  document.getElementById("pr-exp").onclick = function(){
+    document.getElementById("io").innerHTML = '<p class="mute">'+t.exported+'</p><textarea style="width:100%;height:90px" readonly>'+esc(JSON.stringify({prices:S.prices,times:S.times,pos:S.pos,speed:S.speed}))+'</textarea>';
+  };
+  document.getElementById("pr-imp").onclick = function(){
+    document.getElementById("io").innerHTML = '<p class="mute">'+t.importAsk+'</p><textarea id="io-t" style="width:100%;height:90px"></textarea><button id="io-go">OK</button>';
+    document.getElementById("io-go").onclick = function(){
+      try{ var o = JSON.parse(document.getElementById("io-t").value); if(o.prices) S.prices=o.prices; if(o.times) S.times=o.times; if(o.pos) S.pos=o.pos; if(o.speed!=null) S.speed=o.speed; save(); renderAll(); }catch(e){ alert("JSON?"); }
+    };
+  };
+}
+
+function routeRows(){
+  var cm = common(), rows = [];
+  D.goods.forEach(function(g){
+    var buy = buyOf(g); if(buy==null) return;
+    D.posts.forEach(function(p){
+      if(p.id===g.origin) return;
+      var sell = sellOf(g,p.id); if(sell==null) return;
+      var mins = travel(g.origin, p.id); if(mins==null) mins = S.c.qUse ? num(S.c.qTime) : null;
+      var r = calc(buy, sell, cm.qty, cm.tax, cm.extra, mins);
+      if(r) rows.push({g:g, from:postById[g.origin], to:p, buy:buy, sell:sell, r:r, mins:travel(g.origin,p.id)});
+    });
+  });
+  var key = {profit:function(x){return x.r.profit;}, roi:function(x){return x.r.roi==null?-1e18:x.r.roi;}, hour:function(x){return x.r.perHour==null?-1e18:x.r.perHour;}}[S.r.sort];
+  rows.sort(function(a,b){ return key(b)-key(a); });
+  return rows;
+}
+var NOM_RU={1000:"Гавань Морского Стекла",1100:"Деревня Дозорных",2000:"Водный Дрейф",2100:"Деревня Ликования",3000:"Деревня Звездочётов",3100:"Храм Тропы Теней"};
+function shortPost(p){ if(S.lang==="ru"&&NOM_RU[p.id]) return NOM_RU[p.id]; if(S.lang==="en") return nm(p.name); return nm(p.name).replace(/^Торговый пост |\s?Trading Post$/,""); }
+function renderRoutes(){
+  if(!document.getElementById("sec-routes")) return;
+  var t = tr(), el = document.getElementById("sec-routes");
+  var h = '<h2>'+t.routes+'</h2><div class="row"><label>'+t.sortBy+'<select id="r-sort">'
+   +['profit','roi','hour'].map(function(k){return '<option value="'+k+'"'+(S.r.sort===k?" selected":"")+'>'+t["s_"+k]+'</option>';}).join("")+'</select></label>'
+   +'<label>'+t.limit+'<select id="r-lim">'+[10,30,100,1000].map(function(n){return '<option'+(+S.r.limit===n?" selected":"")+'>'+n+'</option>';}).join("")+'</select></label></div>';
+  var rows = routeRows();
+  if(!rows.length) h += '<p class="mute">'+t.noRoutes+'</p>';
+  else h += '<div class="scroll"><table id="rtable"><thead><tr><th>'+t.c_good+'</th><th>'+t.c_route+'</th><th class="num">'+t.c_buy+'</th><th class="num">'+t.c_sell+'</th><th class="num">'+t.c_unit
+   +'</th><th class="num">'+t.c_profit+'</th><th class="num">'+t.c_roi+'</th><th class="num">'+t.c_hour+'</th><th class="num">'+t.c_min+'</th></tr></thead><tbody>'
+   + rows.slice(0, +S.r.limit).map(function(x){
+      return '<tr><td>'+esc(nm(x.g.name))+'</td><td>'+esc(shortPost(x.from))+' → '+esc(shortPost(x.to))+'</td><td class="num">'+fmt(x.buy)+'</td><td class="num">'+fmt(x.sell)
+       +'</td><td class="num">'+fmt(x.r.unit,1)+'</td><td class="num '+cls(x.r.profit)+'">'+fmt(x.r.profit)+'</td><td class="num">'+(x.r.roi==null?"—":fmt(x.r.roi,1)+" %")
+       +'</td><td class="num">'+(x.r.perHour==null?"—":fmt(x.r.perHour))+'</td><td class="num">'+(x.mins==null?"—":fmt(x.mins))+'</td></tr>';
+     }).join("")+'</tbody></table></div>';
+  el.innerHTML = h;
+  document.getElementById("r-sort").onchange = function(){ S.r.sort=this.value; save(); renderRoutes(); };
+  document.getElementById("r-lim").onchange = function(){ S.r.limit=this.value; save(); renderRoutes(); };
+}
+
+function renderTimes(){
+  if(!document.getElementById("sec-times")) return;
+  var t = tr(), P = D.posts;
+  var h = '<h2>'+t.times+'</h2><p class="mute">'+t.times_hint+'</p><div class="scroll"><table id="ttable"><thead><tr><th></th>'+P.map(function(p){return '<th>'+esc(shortPost(p))+'</th>';}).join("")+'</tr></thead><tbody>'
+   + P.map(function(a,i){ return '<tr><td>'+esc(shortPost(a))+'</td>'+P.map(function(b,j){
+        return j<=i ? '<td class="mute">'+(i===j?"—":"")+'</td>' : '<td><input type="number" min="0" data-t="'+timeKey(a.id,b.id)+'" value="'+esc(S.times[timeKey(a.id,b.id)]||"")+'"></td>'; }).join("")+'</tr>'; }).join("")
+   + '</tbody></table></div>';
+  var s = document.getElementById("sec-times"); s.innerHTML = h;
+  s.querySelector("#ttable").addEventListener("input", function(e){ if(e.target.dataset.t){ S.times[e.target.dataset.t]=e.target.value; save(); renderRoutes(); renderCalcOut(); } });
+}
+
+function renderRef(){
+  if(!document.getElementById("sec-ref")) return;
+  var t = tr();
+  var h = '<details><summary><b>'+t.ref+'</b></summary><h3>'+t.ref_posts+'</h3><table><tbody>'
+   + D.posts.map(function(p){ return '<tr><td>'+p.id+'</td><td>'+esc(nm(p.name))+'</td><td>'+t.company+': '+esc(p.company)+'</td><td>'+p.goods.length+' '+t.goodsN+'</td></tr>'; }).join("")
+   + '</tbody></table><h3>'+t.ref_q+'</h3><table><tbody>'
+   + Object.keys(D.quality).map(function(k){ return '<tr><td><b>'+k+'</b></td><td>'+D.quality[k].map(function(s){
+        return t.state[s.state]+(s.afterMs!=null?" ≥"+fmt(s.afterMs/60000,1)+" мин":"")+": "+s.bp; }).join(" · ")+'</td></tr>'; }).join("")
+   + '</tbody></table><h3>'+t.ref_p+'</h3><table><tbody>'
+   + D.patterns.filter(function(p){return p.desc.en;}).map(function(p){ return '<tr><td>'+p.id+'</td><td>'+t.p_cls[p.class]+'</td><td>'+esc(nm(p.desc))+'</td></tr>'; }).join("")
+   + '</tbody></table><p class="mute">'+t.ref_miss+D.emptyTables.join(", ")+'</p></details>';
+  document.getElementById("sec-ref").innerHTML = h;
+}
+
+function renderStatic(){
+  var t = tr();
+  document.documentElement.lang = S.lang;
+  document.getElementById("t-title").textContent = t.title;
+  document.title = t.title + " · ArcheAge Chronicles";
+}
+function renderAll(){ renderStatic(); renderCalc(); renderMap(); renderPrices(); renderRoutes(); renderTimes(); renderRef(); }
+window.addEventListener("aa-lang", function(e){ S.lang=e.detail; save(); renderAll(); });
+window.TR_STATE = S; // для отладки
+renderAll(); document.body.classList.add("boot"); setTimeout(function(){document.body.classList.remove("boot");},1400);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+ "_comment": "Снимок последнего релиза перевода (tools/build_translation_info.py). Живые данные страница берёт из GitHub API.",
+ "repo": "ColdVision/ArcheAge-Chronicles-russian-translate",
+ "version": "0.1.2",
+ "tag": "v0.1.2",
+ "game_build": 26495283,
+ "steam_app_id": 3218230,
+ "built_utc": "2026-11-08T02:22:18Z",
+ "coverage": {
+  "total": 54759,
+  "translated": 49410,
+  "stale": 0
+ },
+ "coverage_B": {
+  "total": 54759,
+  "translated": 49410,
+  "stale": 0
+ },
+ "files": [
+  {
+   "name": "ArcheAge-Chronicles-RU-0.1.2.zip",
+   "size": 3713205,
+   "sha256": "16db7cf83cffd5826b43605fbb7e983a44dc4eb98ec959a53b456980574ef2ae"
+  },
+  {
+   "name": "String-A.locres",
+   "size": 6791169,
+   "sha256": "05685c08b0d13416f148bd1b656a577dec3c6d8f475e921fd122c9f67e423a02"
+  },
+  {
+   "name": "String-B.locres",
+   "size": 6648231,
+   "sha256": "3c701f0575a67ccd3cecb6a4c8d28cf42875cf72db002a25743c510c1926fc26"
+  },
+  {
+   "name": "manifest-A.json",
+   "size": 511,
+   "sha256": "da09793951070aba5d3559025470a4ba1502a6591fe25d751c22542777f0dc31"
+  },
+  {
+   "name": "manifest-B.json",
+   "size": 511,
+   "sha256": "f7d3a48cbba946449cfb1897edbd3ebf86acae33dae0a8bfe1e68e53c5b2012e"
+  },
+  {
+   "name": "manifest.json",
+   "size": 511,
+   "sha256": "da09793951070aba5d3559025470a4ba1502a6591fe25d751c22542777f0dc31"
+  },
+  {
+   "name": "SHA256SUMS.txt",
+   "size": 507,
+   "sha256": ""
+  }
+ ],
+ "release_page": "https://github.com/ColdVision/ArcheAge-Chronicles-russian-translate/releases/tag/v0.1.2",
+ "download_base": "https://github.com/ColdVision/ArcheAge-Chronicles-russian-translate/releases/download/v0.1.2/"
+}

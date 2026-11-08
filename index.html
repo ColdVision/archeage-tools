@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ArcheAge Chronicles · Инструменты — новости, маршруты, крафт, перевод</title>
+<meta name="description" content="Фанатские инструменты ArcheAge Chronicles: новости и патчи, калькулятор торговых маршрутов, калькулятор крафта, русский перевод игры. Данные из клиента игры. / Fan tools: news and patches, trade route and craft calculators, Russian translation.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/aa-theme.css">
+<link rel="stylesheet" href="assets/site.css?v=2">
+<link rel="stylesheet" href="assets/design.css?v=2">
+</head>
+<body data-root="" data-page="home">
+<div id="aa-header"></div>
+<script src="assets/site.js?v=2"></script>
+<main class="aa-page aa-main" id="aa-main">
+  <noscript><p class="aa-nojs">Для работы сайта нужен JavaScript. / JavaScript is required.</p></noscript>
+  <h1 id="h-title" class="aa-sr"></h1>
+  <section class="aa-sec" aria-labelledby="h-news-t">
+    <h2 id="h-news-t"></h2>
+    <ul class="news" id="h-feed"></ul>
+  </section>
+</main>
+<div id="aa-footer"></div>
+<script src="data/news.js"></script>
+<script>
+(function () {
+  "use strict";
+  var T = {
+    ru: { title: "ArcheAge Chronicles · Инструменты", newsT: "Новости", more: "Читать в ВКонтакте", empty: "Новостей пока нет." },
+    en: { title: "ArcheAge Chronicles · Tools", newsT: "News", more: "Read on VKontakte", empty: "No news yet." }
+  };
+  var esc = AA.esc, news = [];
+  function t(k) { return T[AA.lang][k]; }
+  function L(o) { return (o && (o[AA.lang] || o.ru || o.en)) || ""; }
+  function fmtDate(d) { try { return new Date(d + "T00:00:00").toLocaleDateString(AA.lang === "ru" ? "ru-RU" : "en-GB", { year: "numeric", month: "long", day: "numeric" }); } catch (e) { return d; } }
+  function paras(s) { return String(s || "").split(/\n\n+/).filter(Boolean).map(function (p) { return "<p>" + esc(p) + "</p>"; }).join(""); }
+  function entry(i) {
+    var u = /^https?:\/\//i.test(i.url || "") ? i.url : "";
+    return '<time datetime="' + esc(i.date) + '">' + esc(fmtDate(i.date)) + '</time><h3>' + esc(L(i.title)) + '</h3><div class="nb">' + paras(L(i.text)) + '</div>' +
+      (u ? '<p class="nlink"><a href="' + esc(u) + '" target="_blank" rel="noopener">' + t("more") + ' →</a></p>' : '');
+  }
+  function render() {
+    document.title = t("title");
+    document.getElementById("h-title").textContent = t("title");
+    document.getElementById("h-news-t").textContent = t("newsT");
+    var items = news.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    document.getElementById("h-feed").innerHTML = items.length ? items.map(function (i) { return "<li>" + entry(i) + "</li>"; }).join("") : '<li class="mute">' + t("empty") + '</li>';
+  }
+  function useEmbedded() { news = (window.AA_NEWS && window.AA_NEWS.items) || []; render(); }
+  useEmbedded();
+  window.addEventListener("aa-lang", render);
+  try {
+    fetch("data/news.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { news = j.items || []; render(); }).catch(function () {});
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

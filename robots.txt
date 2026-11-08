@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Укажите свой адрес после публикации:
+# Sitemap: https://<user>.github.io/<repo>/sitemap.xml

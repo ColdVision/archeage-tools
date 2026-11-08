@@ -1,0 +1,109 @@
+/* Общие стили сайта поверх aa-theme.css («Academia»). Токены и шрифты темы не меняются. */
+html{scroll-behavior:smooth}
+body{min-height:100vh;display:flex;flex-direction:column}
+body>.aa-page{flex:1 0 auto;width:100%}
+.aa-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.aa-skip{position:absolute;left:8px;top:-60px;z-index:100;background:var(--card);border:2px solid var(--acc);color:var(--acc);padding:8px 14px;border-radius:4px}
+.aa-skip:focus{top:8px}
+a{color:var(--acc)}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+/* ---- шапка ---- */
+header.site-head{display:block;position:sticky;top:0;z-index:60;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.aa-bar{max-width:none;margin:0;padding:6px 12px 6px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.aa-logo-d{display:flex;flex:none}
+.aa-logo{flex:none;object-fit:contain}
+.aa-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto}
+.aa-lang{flex-direction:row;align-items:center}
+.aa-lang select{min-height:40px;padding:4px 10px;font-size:16px;background:var(--leather);border:1px solid var(--line);border-radius:4px}
+a.aa-ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid var(--line);border-radius:4px;background:var(--leather);color:var(--ink);transition:border-color .18s,color .18s,background .18s}
+a.aa-ic svg{width:24px;height:24px}
+a.aa-ic:hover{border-color:var(--acc);color:var(--acc)}
+a.aa-support{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px;border:1px solid var(--acc);border-radius:4px;background:var(--leather);color:var(--acc);text-decoration:none;letter-spacing:.04em;transition:background .18s,color .18s}
+a.aa-support:hover{background:var(--acc);color:var(--bg)}
+.aa-burger{display:none;min-height:44px;width:48px;padding:0;background:var(--leather);border:1px solid var(--acc);border-radius:4px;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.aa-burger span{display:block;width:22px;height:2px;background:var(--acc)}
+nav.aa-nav{padding:0;display:flex;flex-wrap:wrap;gap:6px}
+nav.aa-nav a{padding:14px 18px;text-decoration:none;color:var(--ink);font-family:var(--font-head);font-size:23px;font-weight:600;letter-spacing:.05em;border-bottom:3px solid transparent;transition:color .18s,border-color .18s}
+nav.aa-nav a:hover{color:var(--acc)}
+nav.aa-nav a.cur{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* ---- подвал ---- */
+footer.site-foot{margin-top:auto;border-top:1px solid var(--line);background:var(--bg);padding:16px;text-align:center;color:var(--mute);font-size:13px;box-shadow:inset 0 8px 14px -10px #000}
+footer.site-foot p{max-width:900px;margin:4px auto}
+.aa-flinks{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center}
+.aa-flinks a{display:inline-flex;align-items:center;gap:6px;color:var(--acc)}
+.aa-flinks svg{width:18px;height:18px}
+
+/* ---- содержимое текстовых страниц ---- */
+.aa-main{max-width:1100px;margin:0 auto;padding:18px 16px 28px}
+.aa-main h1{margin:6px 0 4px}
+.aa-lead{color:var(--mute);font-style:italic;margin:0 0 14px}
+.aa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.aa-grid .card{margin:0}
+.card h2,.card h3{margin-top:0}
+.card h3{font-family:var(--font-head);font-size:19px;letter-spacing:.05em;color:var(--acc);margin-bottom:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 18px;border:1px solid var(--acc);border-radius:4px;background:var(--leather);color:var(--ink);text-decoration:none;font:inherit;cursor:pointer;transition:background .18s,color .18s}
+.btn:hover{background:var(--acc);color:var(--bg)}
+.btn.sec{border-color:var(--line)}
+.btn[aria-pressed=true],.btn.on{background:var(--acc);color:var(--bg)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.pill{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 8px;color:var(--mute);font-style:italic;margin-right:6px}
+.pill.patch{border-color:var(--acc);color:var(--acc)}
+.pill.sample{border-color:var(--crimson);color:var(--bad)}
+.news{list-style:none;margin:0;padding:0}
+.news li{padding:12px 0;border-bottom:1px solid var(--line)}
+.news li:last-child{border-bottom:0}
+.news h3{margin:2px 0 4px}
+.news time{color:var(--mute);font-size:13px}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:8px 0}
+.kv dt{color:var(--mute)}.kv dd{margin:0}
+code,.mono{font-family:Consolas,"Courier New",monospace;font-size:13px;background:var(--leather);border:1px solid var(--line);border-radius:3px;padding:0 5px;word-break:break-all}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.cov{height:14px;border:1px solid var(--line);border-radius:7px;background:var(--leather);overflow:hidden;margin:6px 0}
+.cov>i{display:block;height:100%;background:var(--acc)}
+.warnbox{background:var(--warn);border:1px solid var(--crimson);border-radius:6px;padding:10px 12px;margin:12px 0}
+table.sums td:last-child{word-break:break-all}
+.aa-nojs{padding:20px;text-align:center}
+
+/* ---- страницы-калькуляторы ---- */
+body[data-page=trade] .app{height:calc(100vh - var(--aa-head-h,100px) - 20px)}
+body[data-page=trade] #left{scroll-margin-top:var(--aa-head-h,100px)}
+body[data-page=craft] #left{top:var(--aa-head-h,100px);max-height:calc(100vh - var(--aa-head-h,100px))}
+body[data-page=craft] #res{top:var(--aa-head-h,100px)}
+.pg-h{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pg-h h1{font-size:24px;margin:4px 0}
+
+@media (max-width:1400px) and (min-width:821px){
+  a.aa-support span{display:none}
+  a.aa-support{padding:6px 12px}
+  nav.aa-nav a{padding:14px 12px;font-size:21px}
+}
+@media (max-width:820px){
+  .aa-logo{width:44px;height:44px}
+  .aa-burger{display:inline-flex}
+  a.aa-support span{display:none}
+  a.aa-support{padding:6px 10px}
+  nav.aa-nav{display:none;order:3;width:100%;flex-direction:column;padding:0 0 8px}
+  nav.aa-nav.open{display:flex}
+  nav.aa-nav a{border-bottom:1px solid var(--line);border-left:3px solid transparent;font-size:22px;padding:12px 14px}
+  nav.aa-nav a.cur{border-left-color:var(--acc)}
+  body[data-page=trade] .app{height:auto}
+  body[data-page=craft] #left,body[data-page=craft] #res{position:static;max-height:none}
+  header.site-head{position:static}
+  .kv{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}a,.btn,a.aa-ic,a.aa-support,nav.aa-nav a{transition:none!important}}
+body[data-page=trade]{overflow-x:hidden}
+
+/* галерея скриншотов */
+.aa-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.aa-shots a{display:block;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--bg);transition:border-color .18s}
+.aa-shots a:hover{border-color:var(--acc)}
+.aa-shots img{display:block;width:100%;height:auto}
+.aa-vk{margin-top:10px;max-width:100%;overflow:hidden}
+
+/* торговые маршруты: карта вплотную к шапке */
+body[data-page=trade] .wrap{padding-top:0}
+body[data-page=trade] .app{margin-top:0;border-top:0;height:calc(100vh - var(--aa-head-h,100px) - 10px)}
+@media (max-width:820px){body[data-page=trade] .app{height:auto}}

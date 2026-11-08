@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Калькулятор крафта · ArcheAge Chronicles</title>
+<meta name="description" content="Калькулятор крафта ArcheAge Chronicles: дерево рецептов, ресурсы и стоимость. Данные из клиента игры. / Crafting calculator: recipe tree, resources and cost.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../assets/aa-theme.css">
+<style>
+/* раскладка и компоненты калькулятора поверх темы Academia (assets/aa-theme.css) */
+.wrap{max-width:1900px;margin:0 auto;padding:0}
+#app{display:grid;grid-template-columns:270px 250px 1fr;align-items:start}
+#left{padding:14px 16px;position:sticky;top:0;max-height:100vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+#left>*{flex:none}
+#left input[type=number],#left input[type=text]{width:100%}
+#main{padding:0 16px 16px;min-width:0}
+#main .card:first-child{margin-top:14px}
+.mut{color:var(--mute);font-size:13px}.ok,.good{color:var(--good)}.bad{color:var(--bad)}.best{color:var(--good);font-weight:600}
+input[type=number]{width:110px}
+button{color:var(--ink)}button.sm{min-height:30px;padding:2px 10px;font-size:13px}
+button.sec{border-color:var(--line)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pick{position:relative}
+.pick .dd{position:absolute;z-index:30;left:0;right:0;top:100%;background:var(--card);border:1px solid var(--acc);border-radius:4px;max-height:300px;overflow:auto;min-width:300px;box-shadow:0 8px 24px #000c;animation:ddOpen var(--t-fast) var(--ease) both}
+.pick .dd div{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--line)}.pick .dd div:hover{background:var(--leather)}
+.badge{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:4px;color:var(--mute);font-style:italic}
+.tree ul{list-style:none;margin:0;padding-left:22px;border-left:1px dashed var(--line)}.tree>ul{padding-left:0;border:0}
+.node{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:3px 0}
+.node .q{font-weight:700;min-width:48px;color:var(--acc)}.node select{padding:2px 6px;font-size:14px;max-width:280px;min-height:30px}
+.tg{width:26px;min-width:26px;min-height:26px;padding:0;text-align:center;border-color:var(--line);display:inline-block;background:transparent;color:var(--acc)}
+span.tg{border:0}
+.hv{flex-direction:row;align-items:center;gap:4px;font-size:13px}.hv input{width:64px;min-height:28px;padding:2px 6px}
+.badge.good{color:var(--good);border-color:var(--good)}
+#groups details{border-top:1px solid var(--line)}
+#groups summary{cursor:pointer;padding:8px 2px;color:var(--acc);letter-spacing:.06em;font-weight:600}
+#groups .it{display:block;width:100%;text-align:left;min-height:34px;padding:4px 10px;border:0;border-left:3px solid transparent;background:transparent;font-size:15px}
+#groups .it:hover{background:var(--leather)}#groups .it.on{background:var(--warn);border-left-color:var(--acc)}
+#nav{display:flex;flex-direction:column}
+.nv{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:42px;padding:6px 10px;border:0;border-left:3px solid transparent;border-radius:0;background:transparent;text-align:left;color:var(--ink)}
+.subs{display:flex;flex-wrap:wrap;gap:6px}.subs button{min-height:34px;padding:2px 12px;border-color:var(--line);background:transparent}.subs button.on{border-color:var(--acc);color:var(--acc);background:var(--leather)}
+.ci.lk{background:rgba(139,38,53,.22)}.ci.lk .cn>span:first-child{color:var(--mute)}.ci.lk:hover{background:rgba(139,38,53,.35)}
+.sb{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:36px;padding:4px 10px 4px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;text-align:left;font-size:13px;letter-spacing:.04em;color:var(--ink)}.sb small{color:var(--mute);font-size:12px}.sb:hover{background:var(--leather)}.sb.on{color:var(--acc)}.sb .ch{display:inline-block;width:14px;color:var(--mute)}.sg{margin:0 0 2px 10px;border-left:1px solid var(--line)}.grp{border-left:1px solid var(--line);margin:0 0 6px 10px;background:var(--bg)}.grp .ci{min-height:40px;padding:3px 6px}
+.nv .ch{display:inline-block;width:14px;color:var(--mute)}
+.nv small{color:var(--mute);font-size:12px}.nv:hover{background:var(--leather)}.nv.on{background:var(--warn);border-left-color:var(--acc);color:var(--acc)}
+#res{padding:14px 12px;position:sticky;top:0;max-height:100vh;overflow:auto;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.rr{display:flex;gap:8px;align-items:center;min-height:38px;padding:3px 4px;border-bottom:1px solid var(--line)}
+.rr .cn{flex:1;min-width:0;line-height:1.2}.rr .cn small{display:block;color:var(--mute);font-size:12px;font-style:italic}
+.rr b{font-family:var(--font-head);color:var(--acc);white-space:nowrap}
+/* дерево крафта */
+.org{overflow:auto;text-align:center;padding:8px 0 16px}
+.org ul{list-style:none;margin:0;padding:22px 0 0;position:relative;display:inline-flex;justify-content:center;vertical-align:top}
+.org>ul{padding-top:0}
+.org li{display:flex;flex-direction:column;align-items:center;position:relative;padding:22px 8px 0}
+.org>ul>li{padding-top:0}
+.org li::before,.org li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:22px;border-top:2px solid var(--acc)}
+.org li::after{right:auto;left:50%;border-left:2px solid var(--acc)}
+.org li:only-child::before,.org li:only-child::after{display:none}
+.org li:only-child{padding-top:22px}
+.org li:first-child::before,.org li:last-child::after{border:0}
+.org li:last-child::before{border-right:2px solid var(--acc);border-radius:0 6px 0 0}
+.org li:first-child::after{border-radius:6px 0 0 0}
+.org>ul>li::before,.org>ul>li::after{display:none}
+.org ul ul::before{content:"";position:absolute;top:0;left:50%;height:22px;border-left:2px solid var(--acc)}
+.org li:only-child>ul{padding-top:22px}
+.nw{display:flex;flex-direction:column;align-items:center;gap:4px}
+.nd{position:relative;display:inline-flex;align-items:center;gap:8px;max-width:230px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:5px 10px 5px 6px;cursor:pointer;box-shadow:0 2px 4px #0006;transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease)}
+.nd:hover{border-color:var(--acc);background:var(--leather)}
+.nd .nt{display:flex;flex-direction:column;line-height:1.2;min-width:0}.nd .nt b{font-weight:600;color:var(--ink)}.nd .nt small{color:var(--mute);font-size:12px}
+.nd .qb{position:absolute;top:-9px;right:-6px;background:var(--bg);border:1px solid var(--acc);color:var(--acc);border-radius:10px;padding:0 7px;font-size:12px;font-weight:700}
+.nd.have{opacity:.6;border-style:dashed}
+.nd.root{flex-direction:column;background:transparent;border:0;box-shadow:none;cursor:default;max-width:340px;text-align:center}
+.nd.root .nt{align-items:center}.nd.root .nt b{font-family:var(--font-head);font-size:24px;letter-spacing:.04em;color:var(--acc)}
+.nd.root .qb{top:0;right:auto;left:calc(50% + 40px)}
+.ic.xl{width:96px;height:96px;border:0;background:transparent;filter:drop-shadow(0 4px 6px #000)}.ic.m{width:36px;height:36px}
+.nd .arr{color:var(--acc);font-size:13px}.nd.exp{border-color:var(--leather)}
+.nd .tgb{min-height:22px;width:22px;padding:0;border-color:var(--line);color:var(--acc);background:transparent;font-size:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:5px 8px;max-width:260px}
+.ctl select{font-size:13px;min-height:30px;max-width:240px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg select,.fg input{width:100%;min-width:0}
+#cList{max-height:46vh;min-height:180px;overflow:auto;border:1px solid var(--line);border-radius:4px;background:var(--card)}
+.ci{display:flex;gap:10px;align-items:center;width:100%;min-height:44px;padding:4px 8px;border:0;border-bottom:1px solid var(--line);border-left:3px solid transparent;border-radius:0;background:transparent;text-align:left;color:var(--ink)}
+.ci:hover{background:var(--leather)}.ci.on{background:var(--warn);border-left-color:var(--acc)}
+.ci .cn{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.ci .cn small{color:var(--mute);font-size:12px;font-style:italic}
+.ic{width:32px;height:32px;flex:none;object-fit:contain;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+.ic.s{width:24px;height:24px}.ic.l{width:44px;height:44px}
+.gr-Grand{color:#8FC98F}.gr-Rare{color:#7FB2E5}.gr-Heroic{color:#C79AE6}.gr-Legendary{color:#E8A24A}
+#cPager button{min-height:32px;padding:2px 10px}#cPager button.on{background:var(--leather);border-color:var(--acc)}
+.ing{display:grid;grid-template-columns:1fr 90px 40px;gap:6px;margin-bottom:5px}
+footer{padding:16px;color:var(--mute);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+footer a{color:var(--acc)}
+#tree,#totals,#methods{overflow-x:auto}
+@media(max-width:820px){#app{grid-template-columns:1fr}#res{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line)}#left{position:static;max-height:55vh;border-right:0;border-bottom:1px solid var(--line)}header .row{top:8px;right:8px}h1{font-size:22px;padding-right:130px}}
+/* ---------- анимации (transform/opacity, уважают prefers-reduced-motion из темы) ---------- */
+@keyframes nodeIn{from{opacity:0;transform:translateY(-10px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.35);color:var(--ink)}100%{transform:scale(1)}}
+@keyframes grpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes glow{0%,100%{filter:drop-shadow(0 4px 6px #000) drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 4px 6px #000) drop-shadow(0 0 14px rgba(201,162,75,.55))}}
+li.new{animation:nodeIn var(--t-med) var(--ease) both;animation-delay:calc(var(--d,0) * 50ms)}
+.rr.new{animation:rowIn var(--t-med) var(--ease) both;animation-delay:calc(var(--d,0) * 30ms)}
+.rr.chg b{animation:bump .4s var(--ease)}
+.grp.in{animation:grpIn var(--t-fast) var(--ease) both;transform-origin:top}
+.sg.in{animation:grpIn var(--t-fast) var(--ease) both;transform-origin:top}.sg.in .ci{animation:rowIn var(--t-med) var(--ease) both;animation-delay:calc(var(--d,0) * 18ms)}
+.nv .ch{transition:transform var(--t-fast) var(--ease)}
+.nv:hover .ch{transform:translateX(2px)}
+.ci{transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+.ci:hover{transform:translateX(3px)}.ci:active{transform:translateX(1px) scale(.99)}
+.ci .ic{transition:transform var(--t-fast) var(--ease)}.ci:hover .ic{transform:scale(1.12)}
+.nd{transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease),transform var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.nd.exp:hover{transform:translateY(-2px);box-shadow:0 6px 14px #000a}.nd.exp:active{transform:translateY(0) scale(.98)}
+.nd .arr{display:inline-block;transition:transform var(--t-fast) var(--ease)}
+.nd.exp:hover .arr{transform:scale(1.25)}
+.nd.root .ic.xl{animation:glow 4s ease-in-out infinite}
+.nd:focus-visible,.ci:focus-visible,.nv:focus-visible,.sb:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+/* горизонтальное дерево: корень слева, ингредиенты раскрываются вправо (переопределяет вертикальную схему .org выше) */
+.org{text-align:left;padding:8px 0 16px}
+.org ul{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;vertical-align:initial;padding:0 0 0 30px;position:relative}
+.org>ul{padding-left:0}
+.org li{flex-direction:row;align-items:center;padding:6px 0 6px 30px}
+.org>ul>li{padding-left:0}
+.org li::before,.org li:first-child::before,.org li:last-child::before{content:"";position:absolute;left:0;right:auto;top:50%;width:30px;height:0;border:0;border-top:2px solid var(--acc);border-radius:0}
+.org li::after,.org li:first-child::after,.org li:last-child::after{content:"";position:absolute;left:0;right:auto;top:0;bottom:0;width:0;height:auto;border:0;border-left:2px solid var(--acc);border-radius:0}
+.org li:first-child::after{top:50%}
+.org li:last-child::after{bottom:50%}
+.org li:only-child::before{display:block}
+.org li:only-child::after{display:none}
+.org li:only-child{padding-top:6px}
+.org li:only-child>ul{padding-top:0}
+.org ul ul::before{content:"";position:absolute;top:50%;left:0;width:30px;height:0;border:0;border-top:2px solid var(--acc)}
+.org>ul>li::before,.org>ul>li::after,.org>ul>li:first-child::before,.org>ul>li:last-child::after,.org>ul>li:only-child::before{display:none}
+.nd.root{flex-direction:row;text-align:left;max-width:300px}
+.nd.root .nt{align-items:flex-start}
+.nd.root .qb{top:-9px;right:-6px;left:auto}
+</style>
+<link rel="stylesheet" href="../assets/site.css?v=2">
+<link rel="stylesheet" href="../assets/design.css?v=2">
+</head>
+<body data-root="../" data-page="craft">
+<div id="aa-header"></div>
+<main class="aa-page" id="aa-main"><noscript><p class="aa-nojs">Для работы сайта нужен JavaScript. / JavaScript is required.</p></noscript>
+<div class="wrap">
+<div class="pg-h"><h1 id="pgTitle">Калькулятор крафта</h1></div>
+<div id="app">
+<aside id="left">
+  <div class="lh">Крафт</div>
+  <input type="text" id="navQ" placeholder="Поиск предмета…" aria-label="Поиск"><nav id="nav"></nav>
+</aside>
+<aside id="res"><div class="lh">Ресурсы</div><div id="resList"></div></aside>
+<main id="main">
+  <section class="card" id="treeCard"><h2>Дерево крафта</h2><div class="row" style="margin-bottom:10px"><label>Количество<input type="number" id="qty" min="1" value="1"></label></div><div id="tree" class="org"></div></section>
+</main>
+</div>
+</div>
+</main>
+<div id="aa-footer"></div>
+<script src="../assets/site.js?v=2"></script>
+<script src="../data/craft/craftdata.js"></script>
+<script src="../data/craft/crafting.js"></script>
+<script src="../data/craft/recipes.js"></script>
+<script>
+"use strict";
+const D = window.CRAFTDATA, SEED = window.CRAFT_RECIPES || [];
+const items = new Map(D.items.map(i => [i.id, i]));
+const SK = {Alchemy:"Алхимия",Carpentry:"Плотничество",Cooking:"Кулинария",Engineering:"Инженерия",Jewealry:"Ювелирное дело",Milling:"Помол",Smelting:"Плавка",Smithing:"Кузнечное дело",Tailoring:"Портняжное дело",Trimming:"Обработка",Exploring:"Исследование",Farming:"Земледелие",Gathering:"Собирательство",Hunting:"Охота",Mining:"Горное дело"};
+const CAT = {Consumable:"Расходуемое",CraftMaterial:"Материал",CraftRecipe:"Свиток рецепта",Equipment:"Снаряжение",Etc:"Прочее",FullMoonStone:"Камень полнолуния",HousingBuilding:"Здание",HousingBuildingDrawing:"Чертёж здания",HousingObject:"Предмет обстановки",HousingPermit:"Разрешение на жильё",Jewel:"Самоцвет",Memo:"Записка",PolishingMaterial:"Материал полировки",QuestItem:"Квестовый",Repairer:"Ремонт",TearsOfNui:"Слёзы Нуи",WayPoint:"Путевая точка"};
+
+// ---------- состояние ----------
+const LSK = "craftcalc.v1";
+let S = {lang:"ru", target:null, qty:1, fee:0, prices:{}, choice:{}, have:{}, open:{}, recipes:[], nextId:1};
+try { Object.assign(S, JSON.parse(localStorage.getItem(LSK) || "{}")); } catch (e) {}
+S.lang = AA.lang;
+function save() { try { localStorage.setItem(LSK, JSON.stringify(S)); } catch (e) {} }
+
+const $ = id => document.getElementById(id);
+const h = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => n == null ? "—" : (Math.round(n * 100) / 100).toLocaleString("ru-RU");
+function nm(id) { const i = items.get(id); if (!i) return "#" + id; return (S.lang === "ru" ? (i.ru || i.en) : (i.en || i.ru)) || ("#" + id); }
+const allRecipes = () => SEED.map(r => ({...r, seed:true})).concat(S.recipes);
+const recipesFor = id => allRecipes().filter(r => r.out === id);
+const price = id => { const p = S.prices[id]; return (p === undefined || p === "" || p === null) ? null : Number(p); };
+
+// обратный индекс разбора: предмет -> [{src, per}]
+const rev = new Map();
+for (const it of D.items) if (it.disasm && D.disasm[it.disasm]) for (const [tid, y] of D.disasm[it.disasm]) {
+  if (!rev.has(tid)) rev.set(tid, []); rev.get(tid).push({src: it.id, per: y});
+}
+
+// ---------- расчёт ----------
+let stock = {};
+function plan(id, qty, stack, isRoot) {
+  const recs = recipesFor(id), p = price(id);
+  let total = qty, haveUsed = 0;
+  if (!isRoot) { haveUsed = Math.min(stock[id] || 0, qty); if (haveUsed > 0) { stock[id] -= haveUsed; qty -= haveUsed; } }
+  if (qty <= 0) return {item:id, qty:0, total, haveUsed, mode:"have", cost:0, miss:[], unit:0, recipes:recs, choice:S.choice[id] || "auto"};
+  const buyOpt = () => ({mode:"buy", cost: p == null ? null : p * qty, miss: p == null ? [id] : []});
+  const craftOpt = r => {
+    const runs = Math.ceil(qty / (r.outQty || 1));
+    const kids = r.ing.map(g => plan(g.item, g.qty * runs, stack.concat(id), false));
+    let miss = []; let cost = (r.fee || 0) * runs;
+    for (const k of kids) { cost += k.cost || 0; miss = miss.concat(k.miss); }
+    return {mode:"craft", rec:r, runs, kids, cost, miss, made: runs * (r.outQty || 1)};
+  };
+  let usable = stack.includes(id) ? [] : recs;
+  const ch = S.choice[id];
+  let node;
+  if (ch === "buy" && !isRoot) node = buyOpt();
+  else if (ch && ch !== "auto" && ch !== "buy") { const r = usable.find(x => x.id === ch); node = r ? craftOpt(r) : null; }
+  if (!node) {
+    const opts = usable.map(craftOpt);
+    if (!isRoot) opts.push(buyOpt());
+    // выбираем самый дешёвый среди полностью оценённых; иначе — первый вариант с рецептом, иначе покупка
+    // если рецепт известен — ветка всегда раскрывается (покупка только по явному выбору)
+    const crafts = opts.filter(o => o.mode === "craft");
+    const full = crafts.filter(o => !o.miss.length && o.cost != null);
+    if (full.length) node = full.reduce((a, b) => b.cost < a.cost ? b : a);
+    else node = crafts[0] || opts[0] || buyOpt();
+  }
+  node.item = id; node.qty = qty; node.total = total; node.haveUsed = haveUsed; node.recipes = recs; node.choice = ch || "auto";
+  node.unit = node.cost != null ? node.cost / qty : null;
+  return node;
+}
+function walk(n, f) { f(n); if (n.kids) n.kids.forEach(k => walk(k, f)); }
+function altCosts(id, qty) { // стоимости вариантов для одного узла (для подсказок)
+  const sv = stock; stock = {}; try { return altCosts2(id, qty); } finally { stock = sv; } }
+function altCosts2(id, qty) {
+  const out = []; const p = price(id);
+  out.push({key:"buy", label:"Купить", cost: p == null ? null : p * qty});
+  recipesFor(id).forEach((r, i) => { const runs = Math.ceil(qty / (r.outQty || 1));
+    let c = (r.fee || 0) * runs, miss = false;
+    for (const g of r.ing) { const k = plan(g.item, g.qty * runs, [id], false); c += k.cost || 0; if (k.miss.length) miss = true; }
+    out.push({key:r.id, label:"Рецепт " + (i + 1) + (r.note ? " (" + r.note + ")" : ""), cost: miss ? null : c}); });
+  return out;
+}
+
+// ---------- иконки ----------
+function ico(id, cls) {
+  const it = items.get(id);
+  if (!it || !it.ic) return '<span class="ic ' + (cls || "") + '"></span>';
+  return '<img class="ic ' + (cls || "") + '" src="../assets/craft/icons/' + it.ic + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+}
+// ---------- вкладки крафта (как в игре) и выезжающая панель ----------
+const TABS = (window.CRAFTING && window.CRAFTING.tabs) || [];
+const F = {tab:null, subs:new Set(), q:""};
+const tabCount = t => t.subs.reduce((n, x) => n + x.items.length, 0);
+function renderNav() {
+  const q = F.q.trim().toLowerCase();
+  $("nav").innerHTML = TABS.map(t => {
+    const rows = t.subs.map(sb => ({sb, es: sb.items.filter(e => !q || nm(e.i).toLowerCase().includes(q) || (items.get(e.i).en || "").toLowerCase().includes(q))})).filter(x => x.es.length);
+    if (q && !rows.length) return "";
+    const open = q ? true : F.tab === t.key;
+    let h2 = '<button class="nv' + (open ? " on" : "") + '" data-s="' + t.key + '"><span><span class="ch">' + (open ? "▾" : "▸") + "</span>" + h(t.ru) + "</span><small>" + tabCount(t) + "</small></button>";
+    if (open) { let ix = 0; h2 += '<div class="grp' + (F.anim === t.key ? " in" : "") + '">' + rows.map(({sb, es}) => { const so = q || F.subs.has(t.key + "/" + sb.key); return '<button class="sb' + (so ? " on" : "") + '" data-sub="' + t.key + "/" + sb.key + '"><span><span class="ch">' + (so ? "▾" : "▸") + "</span>" + h(sb.ru) + "</span><small>" + es.length + "</small></button>" + (so ? '<div class="sg' + (F.animSub === t.key + "/" + sb.key ? " in" : "") + '">' : "") + (so ? es : []).map(e => '<button style="--d:' + Math.min(ix++, 14) + '" class="ci' + (e.l ? " lk" : "") + (e.i === S.target ? " on" : "") + '" data-i="' + e.i + '" data-r="' + (e.r || "") + '" title="' + (e.l ? "Рецепт не изучен" : "") + '">' + ico(e.i) +
+      '<span class="cn"><span class="gr-' + (items.get(e.i).grade || "") + '">' + h(nm(e.i)) + (e.q > 1 ? " ×" + e.q : "") + "</span>" + (e.l ? "<small>рецепт закрыт</small>" : "") + "</span></button>").join("") + (so ? "</div>" : ""); }).join("") + "</div>"; }
+    return h2;
+  }).join("") || '<div class="mut" style="padding:10px">Ничего не найдено</div>';
+  $("nav").querySelectorAll("[data-s]").forEach(b => b.onclick = () => { F.tab = F.tab === b.dataset.s ? null : b.dataset.s; F.anim = F.tab; renderNav(); F.anim = null; });
+  $("nav").querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const k = b.dataset.sub; if (F.subs.has(k)) F.subs.delete(k); else { F.subs.add(k); F.animSub = k; } renderNav(); F.animSub = null; });
+  $("nav").querySelectorAll("[data-i]").forEach(b => b.onclick = () => { S.target = +b.dataset.i; if (b.dataset.r) S.choice[b.dataset.i] = b.dataset.r; else delete S.choice[b.dataset.i]; save(); render(); });
+}
+function initNav() { $("navQ").oninput = e => { F.q = e.target.value; renderNav(); }; }
+
+// ---------- отрисовка ----------
+function render() {
+  const t = S.target, it = t && items.get(t);
+  $("qty").value = S.qty;
+  renderNav();
+  if (!it) { for (const id of ["tree"]) $(id).innerHTML = '<span class="mut">Выберите предмет в разделах слева.</span>'; renderRes(null); return; }
+  stock = {...S.have};
+  const root = plan(t, S.qty, [], true); const leftover = stock;
+  renderNav(); renderTree(root);
+}
+let ctl = new Set();
+function nodeHTML(n, depth) {
+  const root = depth === 0, have = n.mode === "have";
+  const hasKids = !!(n.kids && n.kids.length), open = !!S.open[n.item];
+  const sub = have ? '<span class="good">есть</span>' :
+    (n.mode === "craft" ? "крафт" + (n.runs > 1 ? " ×" + n.runs : "") + (n.made > n.qty ? ", излишек " + (n.made - n.qty) : "") : (n.recipes.length ? "покупка" : "сырьё"));
+  const qty = have ? n.total : n.qty;
+  const need = n.haveUsed && !have ? ' <small>(нужно ' + fmt(n.total) + ", есть " + fmt(n.haveUsed) + ")</small>" : "";
+  const chip = '<div class="nd' + (root ? " root" : "") + (have ? " have" : "") + (hasKids && !root ? " exp" : "") + '" data-nd="' + n.item + '"' + (hasKids && !root ? ' title="Клик: показать/скрыть состав"' : "") + ">" + ico(n.item, root ? "xl" : "m") +
+    '<span class="nt"><b>' + h(nm(n.item)) + "</b><small>" + sub + need + "</small></span>" + (root && qty === 1 ? "" : '<span class="qb">' + fmt(qty) + "×</span>") +
+    (hasKids && !root ? '<span class="arr">' + (open ? "▾" : "▸") + "</span>" : "") +
+    (!root ? '<button class="tgb" data-cfg="' + n.item + '" title="Настройки: способ получения, есть на складе">⚙</button>' : "") + "</div>";
+  let ctrl = "";
+  if (ctl.has(n.item) || root) {
+    const sel = "";
+    const hv = root ? "" : '<label class="hv">есть <input type="number" min="0" step="any" data-have="' + n.item + '" value="' + (S.have[n.item] || "") + '" placeholder="0"></label>';
+    if (sel || hv) ctrl = '<div class="ctl">' + sel + hv + "</div>";
+  }
+  let out = '<div class="nw">' + chip + ctrl + "</div>";
+  if (hasKids && !have && (root || open)) out += "<ul>" + n.kids.map(k => "<li>" + nodeHTML(k, depth + 1) + "</li>").join("") + "</ul>";
+  return out;
+}
+function renderRes(root) {
+  // ресурсы по видимой части дерева: раскрытые узлы заменяются своими составляющими
+  const need = new Map();
+  const walk = (n, top) => {
+    if (n.qty <= 0) return;
+    if (n.kids && n.kids.length && (top || S.open[n.item])) { n.kids.forEach(k => walk(k, false)); return; }
+    const e = need.get(n.item) || {q: 0, craft: !!(n.kids && n.kids.length)};
+    e.q += n.qty; need.set(n.item, e);
+  };
+  if (root) walk(root, true);
+  const rows = [...need].sort((a, b) => (a[1].craft - b[1].craft) || nm(a[0]).localeCompare(nm(b[0])));
+  const seen = new Map(); let nIdx = 0;
+  $("resList").innerHTML = rows.length ? rows.map(([id, e]) => { seen.set(id, e.q); const cls = !prevRes.has(id) ? " new" : prevRes.get(id) !== e.q ? " chg" : ""; return '<div class="rr' + cls + '" style="--d:' + (cls === " new" ? Math.min(nIdx++, 12) : 0) + '">' + ico(id) + '<span class="cn"><span class="gr-' + (items.get(id).grade || "") + '">' + h(nm(id)) + "</span>" + (e.craft ? "<small>крафт (ветка закрыта)</small>" : "") + "</span><b>" + e.q + "×</b></div>"; }).join("") : '<span class="mut">Выберите предмет.</span>';
+  prevRes = seen;
+}
+function fitTree() {
+  // автоматический масштаб: дерево целиком помещается по ширине (минимум 35%)
+  const box = $("tree"), ul = box.querySelector(":scope>ul"); if (!ul || !box.clientWidth) return;
+  ul.style.zoom = 1;
+  const w = ul.getBoundingClientRect().width, avail = box.clientWidth - 12;
+  ul.style.zoom = w > avail ? Math.max(0.35, avail / w).toFixed(3) : 1;
+}
+window.addEventListener("resize", () => fitTree());
+let prevKeys = new Set(), prevTarget = null, prevRes = new Map();
+function markNew() {
+  const keys = new Set(), fresh = prevTarget !== S.target + "|" + S.qty;
+  $("tree").querySelectorAll("li").forEach(li => {
+    const chain = []; for (let e = li; e && e.id !== "tree"; e = e.parentElement) if (e.tagName === "LI") chain.unshift(e.querySelector(":scope>.nw>.nd,:scope>.nd")?.dataset.nd);
+    const k = chain.join(">"); keys.add(k);
+    if (!prevKeys.has(k) && !(li.parentElement.closest("li")?.classList.contains("new"))) { li.classList.add("new"); li.style.setProperty("--d", chain.length - 1); }
+  });
+  prevKeys = keys; prevTarget = S.target + "|" + S.qty;
+}
+function renderTree(root) {
+  renderRes(root);
+  let html = "<ul><li>" + nodeHTML(root, 0) + "</li></ul>";
+  if (!root.kids && !root.recipes.length) html = '<div class="mut" style="margin-bottom:8px">Состав рецепта этого предмета неизвестен.' + (items.get(root.item).craft ? " В клиенте игры состав рецептов не хранится (серверные данные), на скриншотах он не показан." : "") + "</div>" + html;
+  $("tree").innerHTML = html;
+  markNew(); fitTree();
+  $("tree").querySelectorAll(".nd.exp").forEach(d => { d.tabIndex = 0; d.setAttribute("role", "button"); d.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); d.click(); } }; });
+  $("tree").querySelectorAll(".nd.exp").forEach(d => d.onclick = () => { const id = d.dataset.nd; S.open[id] = !S.open[id]; save(); render(); });
+  $("tree").querySelectorAll("[data-cfg]").forEach(b => b.onclick = e => { e.stopPropagation(); const id = +b.dataset.cfg; if (ctl.has(id)) ctl.delete(id); else ctl.add(id); render(); });
+  $("tree").querySelectorAll(".ctl").forEach(c => c.onclick = e => e.stopPropagation());
+  $("tree").querySelectorAll("input[data-have]").forEach(i => i.onchange = () => { const v = +i.value; if (v > 0) S.have[i.dataset.have] = v; else delete S.have[i.dataset.have]; save(); render(); });
+  $("tree").querySelectorAll("select[data-item]").forEach(s => s.onchange = () => { S.choice[s.dataset.item] = s.value; save(); render(); });
+}
+// ---------- английский интерфейс (общий язык сайта): подмена русских подписей по словарю, оригиналы запоминаются ----------
+const EN_UI = [
+ ["Одноручные мечи","One-handed swords"],
+ ["Двуручные мечи","Two-handed swords"],
+ ["Короткие мечи","Short swords"],
+ ["Особое оружие","Special weapons"],
+ ["Топорики","Hatchets"],
+ ["Арбалеты","Crossbows"],
+ ["Луки","Bows"],
+ ["Топоры","Axes"],
+ ["Молоты","Hammers"],
+ ["Щиты","Shields"],
+ ["Посохи","Staves"],
+ ["Боевые посохи","Battle staves"],
+ ["Сабли","Sabers"],
+ ["Лёгкая · головные уборы","Light · headgear"],
+ ["Лёгкая · нагрудники","Light · chest"],
+ ["Лёгкая · перчатки","Light · gloves"],
+ ["Лёгкая · обувь","Light · footwear"],
+ ["Тяжёлая · головные уборы","Heavy · headgear"],
+ ["Тяжёлая · нагрудники","Heavy · chest"],
+ ["Тяжёлая · перчатки","Heavy · gloves"],
+ ["Тяжёлая · обувь","Heavy · footwear"],
+ ["Тканевая · головные уборы","Cloth · headgear"],
+ ["Тканевая · нагрудники","Cloth · chest"],
+ ["Тканевая · перчатки","Cloth · gloves"],
+ ["Тканевая · обувь","Cloth · footwear"],
+ ["Усиленные метательные","Reinforced throwing"],
+ ["Мастерские метательные","Masterwork throwing"],
+ ["Источники жизни","Life sources"],
+ ["Ожерелья","Necklaces"],
+ ["Серьги","Earrings"],
+ ["Браслеты","Bracelets"],
+ ["Кольца","Rings"],
+ ["Мясо","Meat"],
+ ["Блюда и приправы","Dishes and seasonings"],
+ ["Партии мяса","Meat batches"],
+ ["Паки мяса","Meat packs"],
+ ["Сундуки","Chests"],
+ ["Древесина · партии ×3/×6","Lumber · batches ×3/×6"],
+ ["Древесина · паки ×15/×30","Lumber · packs ×15/×30"],
+ ["Смеси · партии ×3/×6","Additives · batches ×3/×6"],
+ ["Смеси · паки ×15/×30","Additives · packs ×15/×30"],
+ ["Кожа · партии ×3/×6","Leather · batches ×3/×6"],
+ ["Кожа · паки ×15/×30","Leather · packs ×15/×30"],
+ ["Ткани · партии ×3/×6","Textiles · batches ×3/×6"],
+ ["Ткани · паки ×15/×30","Textiles · packs ×15/×30"],
+ ["Самоцветы · партии ×3/×6","Gems · batches ×3/×6"],
+ ["Самоцветы · паки ×15/×30","Gems · packs ×15/×30"],
+ ["Кости · партии ×3/×6","Bones · batches ×3/×6"],
+ ["Кости · паки ×15/×30","Bones · packs ×15/×30"],
+ ["Камень · партии ×3/×6","Stone · batches ×3/×6"],
+ ["Камень · паки ×15/×30","Stone · packs ×15/×30"],
+ ["Металл · партии ×3/×6","Metal · batches ×3/×6"],
+ ["Металл · паки ×15/×30","Metal · packs ×15/×30"],
+ ["Состав рецепта этого предмета неизвестен.","The recipe of this item is unknown."],
+ ["В клиенте игры состав рецептов не хранится (серверные данные), на скриншотах он не показан.","The game client does not store recipe ingredients (server-side data) and the screenshots do not show them."],
+ ["Настройки: способ получения, есть на складе","Settings: how to obtain it, amount in stock"],
+ ["Авто (крафт, если есть рецепт)","Auto (craft if a recipe exists)"],
+ ["Клик: показать/скрыть состав","Click: show/hide ingredients"],
+ ["Выберите предмет в разделах слева.","Pick an item in the sections on the left."],
+ ["крафт (ветка закрыта)","craft (branch collapsed)"],
+ ["Калькулятор крафта","Craft calculator"],["Поиск предмета…","Search item…"],["Дерево крафта","Craft tree"],
+ ["Ничего не найдено","Nothing found"],["Выберите предмет.","Pick an item."],["Рецепт не изучен","Recipe not learned"],["рецепт закрыт","recipe locked"],
+ ["Количество","Quantity"],["Ресурсы","Resources"],["Поиск","Search"],["Крафт","Crafting"],["Купить","Buy"],["Рецепт","Recipe"],
+ ["излишек","surplus"],["нужно","need"],["покупка","buy"],["сырьё","raw"],["крафт","craft"],["есть","have"],
+ ["Кузнечное дело","Blacksmithing"],["Портняжное дело","Tailoring"],["Инженерия","Engineering"],["Алхимия","Alchemy"],["Еда","Food"],["Лесное ремесло","Forestry"],["Ткань","Cloth"],["Переработка","Processing"],["Плавка","Smelting"],
+ ["Воин","Warrior"],["Следопыт","Ranger"],["Берсерк","Berserker"],["Маг","Mage"],["Лёгкая броня","Light armor"],["Тяжёлая броня","Heavy armor"],["Тканевая броня","Cloth armor"],["Дельтапланы","Gliders"],["Рюкзаки","Backpacks"],["Метательное оружие","Throwing weapons"],["Аксессуары","Accessories"],["Древесина","Lumber"],["Смеси","Additives"],["Кожа","Leather"],["Ткани","Textiles"],["Самоцветы","Gems"],["Кости","Bones"],["Камень","Stone"],["Металл","Metal"]
+].map(([ru, en]) => [new RegExp("(?<![А-Яа-яЁё])" + ru.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![А-Яа-яЁё])", "g"), en]);
+const origTxt = new WeakMap(), ATTRS = ["title", "placeholder", "aria-label"];
+function toEn(t) { for (const [re, en] of EN_UI) t = t.replace(re, en); return t; }
+function uiText(root) {
+  if (!root) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  let n = root.nodeType === 1 ? root : w.nextNode();
+  const todo = []; for (; n; n = w.nextNode()) todo.push(n);
+  for (const n of todo) {
+    if (n.nodeType === 3) {
+      if (!origTxt.has(n)) { if (!/[А-Яа-яЁё]/.test(n.nodeValue)) continue; origTxt.set(n, n.nodeValue); }
+      const o = origTxt.get(n), v = S.lang === "en" ? toEn(o) : o; if (n.nodeValue !== v) n.nodeValue = v;
+    } else for (const a of ATTRS) {
+      const k = "data-ru-" + a; let o = n.getAttribute(k);
+      if (o == null) { const c = n.getAttribute(a); if (c == null || !/[А-Яа-яЁё]/.test(c)) continue; o = c; n.setAttribute(k, o); }
+      const v = S.lang === "en" ? toEn(o) : o; if (n.getAttribute(a) !== v) n.setAttribute(a, v);
+    }
+  }
+}
+let uiBusy = false;
+new MutationObserver(ms => { if (uiBusy) return; uiBusy = true; try { for (const m of ms) { if (m.type === "childList") m.addedNodes.forEach(uiText); else if (m.type === "attributes") uiText(m.target); } } finally { uiBusy = false; } })
+  .observe(document.getElementById("aa-main"), {childList: true, subtree: true, attributes: true, attributeFilter: ATTRS});
+// ---------- события ----------
+initNav();
+window.addEventListener("aa-lang", e => { S.lang = e.detail; save(); render(); renderNav(); uiText($("aa-main")); document.title = S.lang === "en" ? "Craft calculator · ArcheAge Chronicles" : "Калькулятор крафта · ArcheAge Chronicles"; });
+$("qty").onchange = e => { S.qty = Math.max(1, Math.floor(+e.target.value) || 1); save(); render(); };
+render(); renderNav(); uiText($("aa-main"));
+if (S.lang === "en") document.title = "Craft calculator · ArcheAge Chronicles";
+</script>
+</body>
+</html>
