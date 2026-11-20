@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Расписание рейдов · ArcheAge Chronicles</title>
-<meta name="description" content="Расписание рейдов ArcheAge Chronicles: Багровая расщелина и Жестокий кошмар. Время в вашем часовом поясе, МСК и UTC, обратный отсчёт до следующего рейда. / Raid schedule with local time, MSK and UTC.">
+<meta name="description" content="Расписание рейдов ArcheAge Chronicles: Багровый Разлом и Жестокий Кельтак. Время в вашем часовом поясе, МСК и UTC, обратный отсчёт до следующего рейда. / Raid schedule with local time, MSK and UTC.">
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="stylesheet" href="../assets/aa-theme.css">
 <link rel="stylesheet" href="../assets/site.css?v=2">
@@ -34,7 +34,7 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
   <div id="r-root"></div>
 </main>
 <div id="aa-footer"></div>
-<script src="../data/raids.js"></script>
+<script src="../data/raids.js?v=2"></script>
 <script>
 (function () {
   "use strict";
@@ -91,30 +91,39 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
       '<p class="rd-tz">' + t("tz") + esc(tz || "—") + '</p></section>';
     h += '<section class="card"><h2>' + t("hardT") + '</h2><p>' + t("hard") + '</p></section>';
     h += '<p class="rd-tz">' + t("src") + ' · <a href="' + esc(R.source || "#") + '" target="_blank" rel="noopener">Steam</a> · ' + t("upd") + ': ' + esc(R.updated || "") + '</p>';
-    document.getElementById("r-root").innerHTML = h;
+    document.getElementById("r-root").innerHTML = h; last = {};
     document.title = t("title") + " · ArcheAge Chronicles";
     tick();
   }
+  var last = {};
+  function setHtml(el, key, html) { if (el && last[key] !== html) { last[key] = html; el.innerHTML = html; } }
+  function setText(el, v) { if (el && el.textContent !== v) el.textContent = v; }
   function tick() {
-    var now = Date.now(), cards = "", rows = [], d0 = utcMidnight(now);
-    R.raids.forEach(function (r) {
+    var now = Date.now(), rows = [], d0 = utcMidnight(now), grid = document.getElementById("rd-cards");
+    if (!grid) return;
+    R.raids.forEach(function (r, i) {
       var s = status(r, now), nm = AA.lang === "ru" ? r.ru : r.en;
-      var st = s.live ? '<span class="rd-state on">' + t("live") + '</span>' : '<span class="rd-state">' + t("soon") + '</span>';
-      var cnt = s.live ? dur(s.live.end - now) : (s.next ? dur(s.next.start - now) : "—");
-      var sub = s.live ? t("leftEnd") : (s.next ? t("leftStart") + " · " + dayWord(s.next.start) + " " + t("at") + " " + fmt(s.next.start) : "");
-      cards += '<section class="card rd-card"><h2>' + esc(nm) + '</h2>' + st + '<div class="rd-count">' + cnt + '</div><div class="rd-sub">' + sub + '</div></section>';
+      var el = document.getElementById("rd-c" + i);
+      if (!el) {
+        el = document.createElement("section"); el.className = "card rd-card"; el.id = "rd-c" + i;
+        el.innerHTML = '<h2></h2><span class="rd-state"></span><div class="rd-count"></div><div class="rd-sub"></div>';
+        grid.appendChild(el);
+      }
+      var stEl = el.querySelector(".rd-state");
+      setText(el.querySelector("h2"), nm);
+      setText(stEl, s.live ? t("live") : t("soon"));
+      stEl.className = "rd-state" + (s.live ? " on" : "");
+      setText(el.querySelector(".rd-count"), s.live ? dur(s.live.end - now) : (s.next ? dur(s.next.start - now) : "—"));
+      setText(el.querySelector(".rd-sub"), s.live ? t("leftEnd") : (s.next ? t("leftStart") + " · " + dayWord(s.next.start) + " " + t("at") + " " + fmt(s.next.start) : ""));
       r.times.forEach(function (x) {
         var tod = minutes(x) * 6e4, isLive = s.live && ((s.live.start - d0 + DAY) % DAY) === tod, isNext = !s.live && s.next && ((s.next.start - d0 + DAY) % DAY) === tod;
         rows.push({ st: d0 + tod, tod: tod, name: nm, cls: isLive ? "live" : (isNext ? "next" : "") });
       });
     });
     rows.sort(function (a, b) { return a.tod - b.tod; });
-    var html = rows.map(function (x) {
+    setHtml(document.getElementById("rd-rows"), "rows", rows.map(function (x) {
       return '<tr class="' + x.cls + '"><td>' + esc(x.name) + '</td><td class="n">' + fmt(x.st) + '</td><td class="n">' + fmt(x.st, "Europe/Moscow") + '</td><td class="n">' + fmt(x.st, "UTC") + '</td></tr>';
-    }).join("");
-    var c = document.getElementById("rd-cards"), b = document.getElementById("rd-rows");
-    if (c) c.innerHTML = cards;
-    if (b) b.innerHTML = html;
+    }).join(""));
   }
   build();
   setInterval(tick, 1000);

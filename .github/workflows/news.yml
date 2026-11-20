@@ -1,0 +1,35 @@
+# Автообновление новостей из группы ВК: раз в 3 часа забирает посты, обновляет data/news.json и news.js
+# и коммитит изменения; GitHub Pages сам пересоберёт сайт. Нужен секрет репозитория VK_TOKEN (сервисный ключ).
+name: Обновить новости ВК
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: news
+  cancel-in-progress: false
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Импорт новостей
+        env:
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+        run: python tools/import_vk_news.py
+      - name: Коммит, если есть изменения
+        run: |
+          if [ -n "$(git status --porcelain data/news.json data/news.js)" ]; then
+            git config user.name "news-bot"
+            git config user.email "news-bot@users.noreply.github.com"
+            git add data/news.json data/news.js
+            git commit -m "Новости ВК: автообновление"
+            git push
+          else
+            echo "Новых постов нет"
+          fi
