@@ -14,7 +14,7 @@
   var I18N = {
     ru: {
       brand: "ArcheAge Chronicles · Инструменты", tag: "Фанатские инструменты по данным игры",
-      nHome: "Главная", nTrade: "Торговые маршруты", nCraft: "Калькулятор крафта", nL10n: "Локализация",
+      nHome: "Главная", nTrade: "Торговые маршруты", nCraft: "Калькулятор крафта", nL10n: "Локализация", nRaids: "Расписание рейдов",
       lang: "Язык", langLabel: "Язык сайта", menu: "Меню", menuOpen: "Открыть меню разделов", menuClose: "Закрыть меню разделов",
       navLabel: "Разделы сайта", vk: "ВКонтакте: группа ArcheAge", tg: "Telegram автора", yt: "YouTube автора",
       support: "Поддержать автора", skip: "К содержимому", nojs: "Для работы сайта нужен JavaScript.",
@@ -24,7 +24,7 @@
     },
     en: {
       brand: "ArcheAge Chronicles · Tools", tag: "Fan tools built from the game data",
-      nHome: "Home", nTrade: "Trade routes", nCraft: "Craft calculator", nL10n: "Localization",
+      nHome: "Home", nTrade: "Trade routes", nCraft: "Craft calculator", nL10n: "Localization", nRaids: "Raid schedule",
       lang: "Language", langLabel: "Site language", menu: "Menu", menuOpen: "Open the section menu", menuClose: "Close the section menu",
       navLabel: "Site sections", vk: "VKontakte: ArcheAge group", tg: "Author's Telegram", yt: "Author's YouTube",
       support: "Support the author", skip: "Skip to content", nojs: "This site needs JavaScript.",
@@ -63,7 +63,7 @@
     yt: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21s-7.5-4.8-10-9.6C.5 8 2.4 4.5 6 4.5c2.2 0 3.7 1.2 4.6 2.6h2.8C14.3 5.7 15.8 4.5 18 4.5c3.6 0 5.5 3.5 4 6.9C19.500 16.200 12 21 12 21z"/></svg>'
   };
-  var NAV = [["home", "nHome", "index.html"], ["trade", "nTrade", "trade/index.html"], ["craft", "nCraft", "craft/index.html"], ["l10n", "nL10n", "l10n/index.html"]];
+  var NAV = [["home", "nHome", "index.html"], ["trade", "nTrade", "trade/index.html"], ["craft", "nCraft", "craft/index.html"], ["raids", "nRaids", "raids/index.html"], ["l10n", "nL10n", "l10n/index.html"]];
 
   function ext(href, key, icon) {
     return '<a class="aa-ic" href="' + href + '" target="_blank" rel="noopener" aria-label="' + AA.esc(AA.t(key)) + '" title="' + AA.esc(AA.t(key)) + '">' + icon + '</a>';

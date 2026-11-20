@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Расписание рейдов · ArcheAge Chronicles</title>
+<meta name="description" content="Расписание рейдов ArcheAge Chronicles: Багровая расщелина и Жестокий кошмар. Время в вашем часовом поясе, МСК и UTC, обратный отсчёт до следующего рейда. / Raid schedule with local time, MSK and UTC.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../assets/aa-theme.css">
+<link rel="stylesheet" href="../assets/site.css?v=2">
+<link rel="stylesheet" href="../assets/design.css?v=2">
+<style>
+.rd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:14px 0}
+.rd-card h2{margin:0 0 4px}
+.rd-state{display:inline-block;font-size:13px;font-weight:650;border-radius:999px;padding:3px 12px;margin:4px 0 8px;border:1px solid var(--line);color:var(--mute)}
+.rd-state.on{color:#04201c;background:var(--good,#6FD18C);border-color:transparent}
+.rd-count{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
+.rd-sub{color:var(--mute);font-size:14px;margin-top:2px}
+table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
+.rd-t th,.rd-t td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+.rd-t td.n{font-variant-numeric:tabular-nums;font-weight:600}
+.rd-t tr.next td{background:var(--glow,rgba(79,209,192,.14))}
+.rd-t tr.live td{background:rgba(111,209,140,.18)}
+.rd-tz{color:var(--mute);font-size:14px;margin:6px 0 0}
+.rd-wrap{overflow-x:auto}
+</style>
+</head>
+<body data-root="../" data-page="raids">
+<div id="aa-header"></div>
+<script src="../assets/site.js?v=3"></script>
+<main class="aa-page aa-main" id="aa-main">
+  <noscript><p class="aa-nojs">Для работы сайта нужен JavaScript. / JavaScript is required.</p></noscript>
+  <div id="r-root"></div>
+</main>
+<div id="aa-footer"></div>
+<script src="../data/raids.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = AA.esc, R = window.AA_RAIDS || { raids: [] };
+  var T = {
+    ru: { title: "Расписание рейдов", lead: "Рейды проходят каждый день, вход открыт 30 минут. Время показано в вашем часовом поясе.",
+      live: "Идёт сейчас", soon: "Следующий рейд", leftEnd: "до конца окна", leftStart: "до начала", at: "в", today: "сегодня", tomorrow: "завтра",
+      allT: "Все рейды на сутки", time: "Ваше время", msk: "МСК", utc: "UTC", raid: "Рейд",
+      tz: "Часовой пояс браузера: ", hardT: "Хард-мод", hard: "В обоих рейдах доступен хард-мод: сложность выбирается в диалоге при входе. После смерти нужно ждать воскрешения: 10 сек после первой, дальше на 10 сек больше каждый раз, максимум 90 сек; при новом входе отсчёт сбрасывается.",
+      src: "Источник: новость Steam от 20.11.2026", upd: "Обновлено" },
+    en: { title: "Raid schedule", lead: "Raids run every day and the entry window lasts 30 minutes. Times are shown in your time zone.",
+      live: "Open now", soon: "Next raid", leftEnd: "until the window closes", leftStart: "until start", at: "at", today: "today", tomorrow: "tomorrow",
+      allT: "All raids for the day", time: "Your time", msk: "MSK", utc: "UTC", raid: "Raid",
+      tz: "Browser time zone: ", hardT: "Hard mode", hard: "Both raids offer a hard mode: pick the difficulty in the entry dialog. After death you wait to resurrect: 10 s after the first, 10 s longer each time, up to 90 s; the counter resets when you re-enter the raid.",
+      src: "Source: Steam news of 2026-11-20", upd: "Updated" }
+  };
+  var DAY = 864e5;
+  function t(k) { return T[AA.lang][k]; }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function loc() { return AA.lang === "ru" ? "ru-RU" : "en-GB"; }
+  function fmt(ms, tz) { return new Intl.DateTimeFormat(loc(), { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }).format(new Date(ms)); }
+  function minutes(s) { var p = s.split(":"); return (+p[0]) * 60 + (+p[1]); }
+  function utcMidnight(now) { return now - ((now % DAY) + DAY) % DAY; }
+  // слоты на вчера/сегодня/завтра (UTC), чтобы не потерять окно через полночь
+  function slots(r, now) {
+    var out = [], d0 = utcMidnight(now);
+    for (var d = -1; d <= 1; d++) r.times.forEach(function (s) {
+      var st = d0 + d * DAY + minutes(s) * 6e4;
+      out.push({ start: st, end: st + r.dur * 6e4 });
+    });
+    return out;
+  }
+  function status(r, now) {
+    var live = null, next = null;
+    slots(r, now).forEach(function (x) {
+      if (now >= x.start && now < x.end) live = x;
+      else if (x.start > now && (!next || x.start < next.start)) next = x;
+    });
+    return { live: live, next: next };
+  }
+  function dayWord(ms) {
+    var n = new Date(), a = new Date(ms);
+    var k = Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(n.getFullYear(), n.getMonth(), n.getDate())) / DAY);
+    return k === 0 ? t("today") : k === 1 ? t("tomorrow") : new Intl.DateTimeFormat(loc(), { day: "numeric", month: "long" }).format(a);
+  }
+  function dur(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60);
+  }
+  function build() {
+    var tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+    var h = '<h1>' + t("title") + '</h1><p class="aa-lead">' + t("lead") + '</p><div class="rd-grid" id="rd-cards"></div>';
+    h += '<section class="card"><h2>' + t("allT") + '</h2><div class="rd-wrap"><table class="rd-t"><thead><tr><th>' + t("raid") + '</th><th>' + t("time") + '</th><th>' + t("msk") + '</th><th>' + t("utc") + '</th></tr></thead><tbody id="rd-rows"></tbody></table></div>' +
+      '<p class="rd-tz">' + t("tz") + esc(tz || "—") + '</p></section>';
+    h += '<section class="card"><h2>' + t("hardT") + '</h2><p>' + t("hard") + '</p></section>';
+    h += '<p class="rd-tz">' + t("src") + ' · <a href="' + esc(R.source || "#") + '" target="_blank" rel="noopener">Steam</a> · ' + t("upd") + ': ' + esc(R.updated || "") + '</p>';
+    document.getElementById("r-root").innerHTML = h;
+    document.title = t("title") + " · ArcheAge Chronicles";
+    tick();
+  }
+  function tick() {
+    var now = Date.now(), cards = "", rows = [], d0 = utcMidnight(now);
+    R.raids.forEach(function (r) {
+      var s = status(r, now), nm = AA.lang === "ru" ? r.ru : r.en;
+      var st = s.live ? '<span class="rd-state on">' + t("live") + '</span>' : '<span class="rd-state">' + t("soon") + '</span>';
+      var cnt = s.live ? dur(s.live.end - now) : (s.next ? dur(s.next.start - now) : "—");
+      var sub = s.live ? t("leftEnd") : (s.next ? t("leftStart") + " · " + dayWord(s.next.start) + " " + t("at") + " " + fmt(s.next.start) : "");
+      cards += '<section class="card rd-card"><h2>' + esc(nm) + '</h2>' + st + '<div class="rd-count">' + cnt + '</div><div class="rd-sub">' + sub + '</div></section>';
+      r.times.forEach(function (x) {
+        var tod = minutes(x) * 6e4, isLive = s.live && ((s.live.start - d0 + DAY) % DAY) === tod, isNext = !s.live && s.next && ((s.next.start - d0 + DAY) % DAY) === tod;
+        rows.push({ st: d0 + tod, tod: tod, name: nm, cls: isLive ? "live" : (isNext ? "next" : "") });
+      });
+    });
+    rows.sort(function (a, b) { return a.tod - b.tod; });
+    var html = rows.map(function (x) {
+      return '<tr class="' + x.cls + '"><td>' + esc(x.name) + '</td><td class="n">' + fmt(x.st) + '</td><td class="n">' + fmt(x.st, "Europe/Moscow") + '</td><td class="n">' + fmt(x.st, "UTC") + '</td></tr>';
+    }).join("");
+    var c = document.getElementById("rd-cards"), b = document.getElementById("rd-rows");
+    if (c) c.innerHTML = cards;
+    if (b) b.innerHTML = html;
+  }
+  build();
+  setInterval(tick, 1000);
+  window.addEventListener("aa-lang", build);
+})();
+</script>
+</body>
+</html>
