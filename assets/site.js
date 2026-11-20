@@ -81,7 +81,6 @@
       '<div class="aa-tools">' +
       '<label class="aa-lang"><span class="aa-sr">' + AA.esc(AA.t("lang")) + '</span><select id="aa-lang" aria-label="' + AA.esc(AA.t("langLabel")) + '"><option value="ru">Русский</option><option value="en">English</option></select></label>' +
       ext(LINKS.vk, "vk", ICON.vk) + ext(LINKS.tg, "tg", ICON.tg) +
-      '<a class="aa-support" href="' + LINKS.support + '" target="_blank" rel="noopener">' + ICON.heart + '<span>' + AA.esc(AA.t("support")) + '</span></a>' +
       '<button type="button" class="aa-burger" id="aa-burger" aria-expanded="false" aria-controls="aa-nav" aria-label="' + AA.esc(AA.t("menuOpen")) + '"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>' +
       '</div></header>';
   }
@@ -93,6 +92,16 @@
       '<a href="' + LINKS.tg + '" target="_blank" rel="noopener">Telegram t.me/ucolda</a>' +
       '<a href="' + LINKS.vk + '" target="_blank" rel="noopener">' + (lang === "ru" ? "ВКонтакте" : "VK") + ' vk.ru/archeagechronicles</a>' +
       '<a href="' + LINKS.repo + '" target="_blank" rel="noopener">GitHub</a></p></footer>';
+  }
+
+  function paintDonate() {
+    var el = document.getElementById("aa-donate");
+    if (!el) { el = document.createElement("aside"); el.id = "aa-donate"; document.body.appendChild(el); }
+    var t = AA.t("support");
+    el.className = "aa-donate open";
+    el.setAttribute("aria-label", t);
+    el.innerHTML = '<a class="aa-d-btn" href="' + LINKS.support + '" target="_blank" rel="noopener"><span>' + AA.esc(t) + '</span></a>' +
+      '<a class="aa-d-qr" href="' + LINKS.support + '" target="_blank" rel="noopener" aria-label="' + AA.esc(t) + ': dalink.to/coldvision"><img src="' + root + 'assets/donate-qr.svg" width="132" height="132" alt="QR dalink.to/coldvision"></a>';
   }
 
   function measure() {
@@ -116,6 +125,7 @@
       };
     }
     measure();
+    paintDonate();
   }
 
   var ro = window.ResizeObserver ? new ResizeObserver(measure) : null;
