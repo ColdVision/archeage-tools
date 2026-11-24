@@ -23,18 +23,18 @@
 (function () {
   "use strict";
   var esc = AA.esc;
-  var DRIVE = "https://drive.google.com/file/d/17KgymNISCY0njLkl6g_B1FXEm_vYFQwU/view";
+  var DOWNLOAD_URL = "https://github.com/ColdVision/ArcheAge-Chronicles-russian-translate/releases/download/v0.1.8/ArcheAge-Chronicles-RU-0.1.8.zip";
   var T = {
     ru: {
       title: "Русский перевод ArcheAge Chronicles", lead: "Неофициальный фанатский перевод игры на русский язык.",
-      dlT: "Скачать", drive: "Скачать с Google Диска",
+      dlT: "Скачать", archive: "Скачать русификатор 0.1.8 (ZIP)",
       shotsT: "Скриншоты", shots: ["Игровой экран: задания и чат на русском", "Журнал заданий", "Умения и подсказки", "Информация о персонаже"],
       insT: "Как установить",
       ins: ["Скачайте архив по кнопке выше и распакуйте его в папку, где лежит <code>ArcheAgeChronicles.exe</code> (<code>SteamLibrary\steamapps\common\ArcheAge Chronicles</code>).", "Закройте игру, если она запущена.", "Выберите один вариант: <code>Enable Full Russian</code> — полный перевод всей игры; <code>Enable English names</code> — английские названия квестов, предметов, умений, имена и статусы остаются на английском; <code>Remove-Russian</code> — полное удаление перевода.", "<code>Update-Russian</code> — проверить обновления."]
     },
     en: {
       title: "Russian translation of ArcheAge Chronicles", lead: "An unofficial fan translation of the game into Russian.",
-      dlT: "Download", drive: "Download from Google Drive",
+      dlT: "Download", archive: "Download Russian translation 0.1.8 (ZIP)",
       shotsT: "Screenshots", shots: ["In game: quests and chat in Russian", "Quest journal", "Skills and tooltips", "Character information"],
       insT: "How to install",
       ins: ["Download the archive with the button above and extract it into the folder where <code>ArcheAgeChronicles.exe</code> is (<code>SteamLibrary\steamapps\common\ArcheAge Chronicles</code>).", "Close the game if it is running.", "Pick one option: <code>Enable Full Russian</code> — full translation of the whole game; <code>Enable English names</code> — keep English names of quests, items, skills, names and statuses; <code>Remove-Russian</code> — remove the translation completely.", "<code>Update-Russian</code> — check for updates."]
@@ -44,7 +44,7 @@
   function render() {
     document.title = AA.lang === "ru" ? "Русский перевод ArcheAge Chronicles — скачать и установить" : "Russian translation of ArcheAge Chronicles — download and install";
     var h = '<h1>' + t("title") + '</h1><p class="aa-lead">' + t("lead") + '</p>';
-    h += '<section class="card" id="download"><h2>' + t("dlT") + '</h2><div class="btns"><a class="btn" href="' + DRIVE + '" target="_blank" rel="noopener">⬇ ' + t("drive") + '</a></div></section>';
+    h += '<section class="card" id="download"><h2>' + t("dlT") + '</h2><div class="btns"><a class="btn" href="' + DOWNLOAD_URL + '" target="_blank" rel="noopener">⬇ ' + t("archive") + '</a></div></section>';
     h += '<section class="card"><h2>' + t("insT") + '</h2><ol class="steps">' + t("ins").map(function (x) { return "<li>" + x + "</li>"; }).join("") + '</ol></section>';
     h += '<section class="card"><h2>' + t("shotsT") + '</h2><div class="aa-shots">' + t("shots").map(function (a, i) { return '<a href="../assets/l10n/shot' + (i + 1) + '.jpg" target="_blank" rel="noopener"><img src="../assets/l10n/shot' + (i + 1) + '.jpg" alt="' + esc(a) + '" loading="lazy"></a>'; }).join("") + '</div></section>';
     document.getElementById("l-root").innerHTML = h;
