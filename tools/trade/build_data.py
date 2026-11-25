@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Сборка data/tradedata.json и data/tradedata.js из выгрузки данных игры.
+"""Сборка data/trade/tradedata.json и data/trade/tradedata.js из выгрузки данных игры.
 
 Использование (пути по умолчанию подходят для D:\\Claude\\aa-tools):
   python tools/trade/build_data.py [--cms DIR] [--locres en/String.locres] [--project aa.x5tr]
@@ -14,6 +14,8 @@ import argparse, csv, io, json, os, re, subprocess, sys, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # корень сайта (Site)
 AA = r"D:\Claude\aa-tools"
 CASES = {"nom": 3, "gen": 4, "dat": 5, "acc": 6, "ins": 7, "prep": 8}
+# Трофеи и наборы камней из обновления от 25 ноября 2026.
+NEW_GOOD_IDS = range(1169, 1187)
 
 
 def read_cms(cms, name):
@@ -45,6 +47,45 @@ def resolve(text, names):
     return re.sub(r"\{\{n:([^|}]+)(?:\|(\w+))?\}\}", sub, text)
 
 
+def client_economy(goods, posts, trade_rows, recipes, purchases):
+    trade_by_id = {int(r["id"]): r for r in trade_rows}
+    recipe_by_id = {int(r["FK_TradeGood"]): r for r in recipes}
+    post_ids = {p["id"] for p in posts}
+    payouts = {gid: {} for gid in goods}
+    for r in purchases:
+        gid, dest = int(r["FK_tradeGoodId"]), int(r["tradingPostId"])
+        good = goods.get(gid)
+        if not good or dest not in post_ids or good["origin"] != int(r["startTradingPostId"]):
+            continue
+        if r["FK_Item"]:
+            reward = [int(r["FK_Item"]), int(r["rewardItemAmount"])]
+        elif r["moneyType"] == "Gold":
+            reward = int(r["rewardBasisPoints"]) / 100
+            if reward.is_integer():
+                reward = int(reward)
+        else:
+            raise ValueError(f"Неизвестная награда за товар {gid} в посте {dest}")
+        payouts[gid][dest] = reward
+
+    economy = {}
+    for gid in goods:
+        trade, recipe = trade_by_id[gid], recipe_by_id.get(gid)
+        packing, materials = None, []
+        if recipe:
+            if recipe["costType"] != "Gold":
+                raise ValueError(f"Неизвестная валюта упаковки товара {gid}")
+            packing = int(recipe["costValue"])
+            for slot in range(1, 6):
+                iid = recipe[f"materialId{slot:02}"]
+                if iid:
+                    materials.append([int(iid), int(recipe[f"materialCount{slot:02}"])])
+        economy[str(gid)] = (
+            int(trade["basicValue"]), int(trade["validPeriod"]), packing,
+            int(trade["weight"]), payouts[gid], materials,
+        )
+    return economy
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cms", default=AA + r"\game-data-26495283\X5\Content\Design\CMS")
@@ -66,10 +107,17 @@ def main():
     proj = json.load(open(a.project, encoding="utf-8"))
     ru_raw = {k: t for _, k, t in proj["Tr"]}
     names = load_names(a.names)
+    manual_dir = os.path.join(ROOT, "data", "trade", "manual")
+    with open(os.path.join(manual_dir, "pack-labels-ru.json"), encoding="utf-8") as f:
+        ru_fallback = json.load(f)
 
     def tx(key):
         e = en.get(key)
-        r = ru_raw.get(key)
+        r = ru_raw.get(key) or ru_fallback.get(key)
+        if not r and key.endswith("_VOUCHERNAME"):
+            label = ru_fallback.get(key.removesuffix("_VOUCHERNAME") + "_NAME")
+            if label and e:
+                r = "[Свидетельство] " + label
         return {"en": resolve(e, names) if e else None,
                 "ru": resolve(r, names) if r else (resolve(e, names) if e else None)}
 
@@ -78,9 +126,11 @@ def main():
     qual = read_cms(a.cms, "TradeGoodQuality")
     pat = read_cms(a.cms, "TradePatternDesc")
     comp = {c["id"]: c for c in read_cms(a.cms, "Company")}
-    # таблицы, которые в клиенте пустые (данные на сервере) — фиксируем для README/страницы
-    empty = [t for t in ("TradeGood", "MakeTradeGood", "TradeBonusReward", "TradingPostPurchase", "Zone", "Shop",
-                         "Portal", "MapMarker", "OriginMap") if read_cms(a.cms, t) is None]
+    economy_names = ("TradeGood", "MakeTradeGood", "TradingPostPurchase")
+    economy_tables = [read_cms(a.cms, t) for t in economy_names]
+    empty = [t for t, rows in zip(economy_names, economy_tables) if rows is None]
+    empty.extend(t for t in ("TradeBonusReward", "Zone", "Shop", "Portal", "MapMarker", "OriginMap")
+                 if read_cms(a.cms, t) is None)
 
     goods_by_post = {}
     for r in pg:
@@ -92,8 +142,6 @@ def main():
         gl = [g for _, g in sorted(goods_by_post.get(pid, []))]
         if not gl:
             continue  # посты 4000/4100/7000 без товаров и без названия — служебные
-        zone = comp.get(p["company"], {}).get("zoneKey", "")
-        zm = re.match(r"Zone_(\d+)", zone)
         out_posts.append({
             "id": int(pid), "group": int(p["group"]), "company": p["company"],
             "name": tx("TXT_TRADINGPOST_%010d_NAME" % int(pid)),
@@ -104,25 +152,29 @@ def main():
                           "name": tx("TXT_TRADEGOOD_%010d_NAME" % gid),
                           "voucher": tx("TXT_TRADEGOOD_%010d_VOUCHERNAME" % gid)}
 
-    # экономика товаров — НЕ из клиента (там таблицы пустые), а из data/trade/manual/trade-goods.json
-    # (снято с questlog.gg по решению пользователя). Игровые данные остаются главным источником, этот файл только дополняет.
-    src_path = os.path.join(ROOT, "data", "trade", "manual", "trade-goods.json")
-    econ_n = 0
-    if os.path.exists(src_path):
-        src = json.load(open(src_path, encoding="utf-8"))["goods"]
-        def item(iid):
-            return {"id": iid, "name": tx("TXT_ITEM_%010d_NAME" % iid)}
-        for gid, g in goods.items():
-            r = src.get(str(gid))
-            if not r:
-                continue
-            base, valid, pack, weight, pay, mats = r
-            g["econ"] = {"base": base, "freshMin": valid, "pack": pack, "weight": weight,
-                         "mats": [dict(item(m[0]), count=m[1]) for m in mats],
-                         "pay": {pid: ({"rate": v} if not isinstance(v, list) else {"item": dict(item(v[0]), count=v[1])})
-                                 for pid, v in pay.items()}}
-            econ_n += 1
-        print("экономика (внешний источник):", econ_n, "товаров")
+            if gid in NEW_GOOD_IDS:
+                goods[gid]["new"] = True
+
+    if all(rows is not None for rows in economy_tables):
+        src = client_economy(goods, out_posts, *economy_tables)
+        economy_source = "client"
+    else:
+        with open(os.path.join(manual_dir, "trade-goods.json"), encoding="utf-8") as f:
+            src = json.load(f)["goods"]
+        economy_source = "questlog"
+
+    def item(iid, count):
+        return {"id": iid, "name": tx("TXT_ITEM_%010d_NAME" % iid), "count": count}
+
+    for gid, g in goods.items():
+        if str(gid) not in src:
+            continue
+        base, valid, pack, weight, pay, mats = src[str(gid)]
+        g["econ"] = {"base": base, "freshMin": valid, "pack": pack, "weight": weight,
+                     "mats": [item(*m) for m in mats],
+                     "pay": {pid: ({"item": item(*v)} if isinstance(v, list) else {"rate": v})
+                             for pid, v in pay.items()}}
+    print("экономика:", economy_source, sum("econ" in g for g in goods.values()), "товаров")
 
     # группы качества: состояние по времени (мс от начала доставки) и коэффициент (б.п.)
     order = {"Better": 0, "Good": 1, "Normal": 2, "Bad": 3}
@@ -146,6 +198,7 @@ def main():
 
     data = {
         "build": a.build,
+        "economySource": economy_source,
         "posts": out_posts,
         "goods": sorted(goods.values(), key=lambda g: g["id"]),
         "quality": {str(k): v for k, v in sorted(qg.items())},
