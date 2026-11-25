@@ -105,7 +105,7 @@ def main():
         ne, nr = tx("TXT_ITEM_%010d_NAME" % iid)
         de, dr = tx("TXT_ITEM_%010d_DESC" % iid)
         o = {"id": iid, "en": ne or "", "ru": nr or "", "cat": r["category"], "sub": r["subCategory"],
-             "grade": r["grade"], "lvl": int(num(r["level"], 1)),
+             "grade": "Rare" if iid in (70108008, 70108009, 70108010, 70108011, 70108012) and r["grade"] == "Normal" else r["grade"], "lvl": int(num(r["level"], 1)),
              "price": num(r["priceValue"]), "pt": r["priceType"]}
         if r["FK_iconId"]:
             o["ic"] = int(r["FK_iconId"])

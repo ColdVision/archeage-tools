@@ -159,9 +159,9 @@ li.new{animation:nodeIn var(--t-med) var(--ease) both;animation-delay:calc(var(-
 </main>
 <div id="aa-footer"></div>
 <script src="../assets/site.js?v=7"></script>
-<script src="../data/craft/craftdata.js"></script>
+<script src="../data/craft/craftdata.js?v=20261125"></script>
 <script src="../data/craft/crafting.js"></script>
-<script src="../data/craft/recipes.js"></script>
+<script src="../data/craft/recipes.js?v=20261125"></script>
 <script>
 "use strict";
 const D = window.CRAFTDATA, SEED = window.CRAFT_RECIPES || [];
@@ -180,7 +180,7 @@ const $ = id => document.getElementById(id);
 const h = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = n => n == null ? "—" : (Math.round(n * 100) / 100).toLocaleString("ru-RU");
 function nm(id) { const i = items.get(id); if (!i) return "#" + id; return (S.lang === "ru" ? (i.ru || i.en) : (i.en || i.ru)) || ("#" + id); }
-const allRecipes = () => SEED.map(r => ({...r, seed:true})).concat(S.recipes);
+const allRecipes = () => SEED.filter(r => !r.pendingQuantities).map(r => ({...r, seed:true})).concat(S.recipes);
 const recipesFor = id => allRecipes().filter(r => r.out === id);
 const price = id => { const p = S.prices[id]; return (p === undefined || p === "" || p === null) ? null : Number(p); };
 
@@ -270,6 +270,11 @@ function render() {
   $("qty").value = S.qty;
   renderNav();
   if (!it) { for (const id of ["tree"]) $(id).innerHTML = '<span class="mut">Выберите предмет в разделах слева.</span>'; renderRes(null); return; }
+  if (!recipesFor(t).length && SEED.some(r => r.out === t && r.pendingQuantities)) {
+    $("tree").textContent = S.lang === "ru" ? "Патч 25 ноября снизил расход материалов высокого качества на 50–66%. Точные количества для этого рецепта уточняются." : "The November 25 patch reduced Fine material requirements by 50–66%. Exact quantities for this recipe are pending.";
+    $("resList").textContent = "—";
+    return;
+  }
   stock = {...S.have};
   const root = plan(t, S.qty, [], true); const leftover = stock;
   renderNav(); renderTree(root);

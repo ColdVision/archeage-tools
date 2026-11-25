@@ -302,7 +302,7 @@ function cls(n){ return n>0?"pos":(n<0?"neg":""); }
 function econOf(g){ return g && g.econ || null; }
 function autoSell(g,pid){ var e=econOf(g), v=e&&e.pay[pid]; return (v&&v.rate!=null) ? Math.round(e.base*v.rate/100) : null; }
 function sellOf(g,pid){ var m=num(pr(g.id).sell[pid]); return m!=null ? m : autoSell(g,pid); }
-function buyOf(g){ var b=num(pr(g.id).buy), e=econOf(g); if(!e) return b; return (b==null?0:b)+(e.pack||0); }
+function buyOf(g){ var b=num(pr(g.id).buy), e=econOf(g); if(!e) return b; if(saleOnly(g)) return b==null?0:b; return (b==null?0:b)+(e.pack||0); }
 function itemTxt(it){ return nm(it.name)+" ×"+it.count; }
 function pr(gid){ return S.prices[gid]||(S.prices[gid]={buy:"",sell:{}}); }
 function timeKey(a,b){ return a<b ? a+"-"+b : b+"-"+a; }
@@ -417,13 +417,22 @@ function drawMapOverlay(){
   if(ue) ue.innerHTML = un.length ? t.p_unplaced+' '+un.map(function(p){return '<button data-pl="'+p.id+'">'+esc(shortPost(p))+'</button>';}).join("") : "";
 }
 
+function saleOnly(g){ return /Tempering Stone Chest$/.test(g.name.en); }
+function legacyNotice(){ return S.lang==="ru"?"Только сдача готового сундука":"Existing chests can only be sold"; }
+function newTradeGoods(){
+  var ru=S.lang==="ru";
+  var loot=ru?["Связка грубого меха","Связка переработанной ткани","Ящик трофейных знаков батальона Леопарда","Ящик очищенных от ржавчины компасов","Ящик закалённых клыков","Ящик трофейных знаков батальона Ликаона","Ящик запечатанных осколков душ","Ящик трофейных знаков батальона Горгульи","Ящик заиндевевшей чешуи","Ящик найденных солдатских реликвий","Ящик очищенных ритуальных масок","Мешок переработанного металлолома"]:["Natural Crude Fur Bundle","Recycled Cloth Bundle","Captured Leopard Battalion Mark Crate","Rust-Cleaned Compass Crate","Hardened Fang Crate","Captured Lycaon Battalion Mark Crate","Sealed Soul Fragment Crate","Captured Gargoyle Battalion Mark Crate","Frosted Scale Crate","Recovered Soldier Keepsake Crate","Purified Ritual Mask Crate","Recycled Scrap Metal Sack"];
+  var grades=ru?["Тусклые","Яркие","Сияющие"]:["Faint","Vivid","Brilliant"];
+  grades.forEach(function(grade){ (ru?["оружия","брони"]:["Weapon","Armor"]).forEach(function(kind){ loot.push(ru?grade+" закалочные камни для "+kind+" (набор)":grade+" "+kind+" Tempering Stone Bundle"); }); });
+  return '<details class="gmeta"><summary>'+(ru?"Новые товары · 18":"New trade goods · 18")+'</summary><p>'+(ru?"Торговые посты, состав и награды ещё уточняются.":"Trading posts, ingredients and payouts are pending.")+'</p><ul>'+loot.map(function(n){return "<li>"+esc(n)+"</li>";}).join("")+"</ul></details>";
+}
 function ddItems(){
   var t=tr(), q=(S.q||"").toLowerCase(), h="", last=null;
   D.goods.filter(function(g){ return (!S.fp||String(g.origin)===String(S.fp)) && (!q||nm(g.name).toLowerCase().indexOf(q)>=0); })
    .sort(function(a,b){return a.origin-b.origin||a.id-b.id;})
    .forEach(function(g){ if(g.origin!==last){ last=g.origin; h+='<div class="gh">'+esc(nm(postById[g.origin].name))+'</div>'; }
      var e=econOf(g), mr=e&&e.mats.filter(function(m){return m.id!==70101009 && m.id!==84010006;})[0];
-     h+='<button data-g="'+g.id+'">'+ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+(mr?'<small class="mres">'+ico(IICO(mr.id),"s")+esc(nm(mr.name))+'</small>':'')+'</span></button>'; });
+     h+='<button data-g="'+g.id+'">'+ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+(saleOnly(g)?'<small class="mres">'+legacyNotice()+'</small>':mr?'<small class="mres">'+ico(IICO(mr.id),"s")+esc(nm(mr.name))+'</small>':'')+'</span></button>'; });
   if(S.c.good) h='<button data-g="" class="clr"><span>✕ '+t.p_clrgood+'</span></button>'+h;
   return h || '<div class="gh">'+t.p_nogoods+'</div>';
 }
@@ -431,7 +440,7 @@ function rewardHtml(g,pid,qty){
   var t=tr(), e=econOf(g), pv=e&&e.pay[pid];
   if(!pv) return '<span class="sm">—</span>';
   if(pv.rate!=null) return '<b>'+fmt(autoSell(g,pid)*qty)+' '+t.p_gold+'</b> <span class="sm">('+fmt(pv.rate,2)+'% '+t.p_base.toLowerCase()+')</span>';
-  var ex=e.mats.filter(function(m){return m.id!==70101009 && m.id!==84010006;})[0];
+  var ex=!saleOnly(g)&&e.mats.filter(function(m){return m.id!==70101009 && m.id!==84010006;})[0];
   return '<span class="sm">'+t.p_exch+':</span> '+(ex?ico(IICO(ex.id),"s")+'<span>×'+(ex.count*qty)+'</span><span class="arrow">→</span>':'')
     +ico(IICO(pv.item.id),"s")+'<b>'+esc(nm(pv.item.name))+' ×'+(pv.item.count*qty)+'</b>';
 }
@@ -441,9 +450,11 @@ function renderPanel(){
   var h='<div class="lh">'+t.p_pick+'</div><div class="dd"><button class="ddb" id="dd-b" aria-expanded="'+(S.dd?"true":"false")+'">'
    +(g?ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+'</span>':'<span class="mute">'+t.pickGood+'</span>')+'<i>▾</i></button>'
    +'<div class="ddl" id="dd-l" style="display:'+(S.dd?'block':'none')+'"><div id="dd-i">'+ddItems()+'</div></div></div>';
+  h+=newTradeGoods();
   if(!g){ var og=origin(); if(og&&postById[og]) h+='<div class="gmeta">'+esc(nm(postById[og].name))+' · '+esc(postById[og].company)+(S.c.to&&postById[S.c.to]?' → '+esc(shortPost(postById[S.c.to])):'')+'</div>'; h+='<p class="mute" style="margin-top:14px">'+t.p_open+'</p>'; el.innerHTML=h; bindPanel(null); return; }
   h+='<div class="gmeta">'+esc(nm(postById[g.origin].name))+' · '+esc(postById[g.origin].company)+'</div>';
-  if(e){
+  if(saleOnly(g)) h+='<p class="gmeta">'+legacyNotice()+'</p>';
+  else if(e){
     h+='<div class="mats">'+e.mats.map(function(m){ return '<div class="mat" title="'+esc(nm(m.name))+'">'+ico(IICO(m.id)).replace('class="ic"','class="ic" style="width:44px;height:44px"')+'<b>×'+(m.count*qty)+'</b><br>'+esc(nm(m.name))+'</div>'; }).join("")+'</div>';
   }
   h+='<div class="lh sm">'+t.p_deliver+'</div>'

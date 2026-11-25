@@ -34,22 +34,22 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
   <div id="r-root"></div>
 </main>
 <div id="aa-footer"></div>
-<script src="../data/raids.js?v=2"></script>
+<script src="../data/raids.js?v=3"></script>
 <script>
 (function () {
   "use strict";
   var esc = AA.esc, R = window.AA_RAIDS || { raids: [] };
   var T = {
-    ru: { title: "Расписание рейдов", lead: "Рейды проходят каждый день, вход открыт 30 минут. Время показано в вашем часовом поясе.",
+    ru: { title: "Расписание рейдов", lead: "Обычная сложность открывается первой, сложная — сразу после неё. Время показано в вашем часовом поясе.",
       live: "Идёт сейчас", soon: "Следующий рейд", leftEnd: "до конца окна", leftStart: "до начала", at: "в", today: "сегодня", tomorrow: "завтра",
       allT: "Все рейды на сутки", time: "Ваше время", msk: "МСК", utc: "UTC", raid: "Рейд",
-      tz: "Часовой пояс браузера: ", hardT: "Хард-мод", hard: "В обоих рейдах доступен хард-мод: сложность выбирается в диалоге при входе. После смерти нужно ждать воскрешения: 10 сек после первой, дальше на 10 сек больше каждый раз, максимум 90 сек; при новом входе отсчёт сбрасывается.",
-      src: "Источник: новость Steam от 20.11.2026", upd: "Обновлено" },
-    en: { title: "Raid schedule", lead: "Raids run every day and the entry window lasts 30 minutes. Times are shown in your time zone.",
+      tz: "Часовой пояс браузера: ", normal: "Обычная", hardLabel: "Сложная", hardT: "Воскрешение", hard: "В Gyldenlord Dimension теперь можно воскресать внутри подземелья. В сложных рейдах после смерти нужно ждать воскрешения: 10 сек после первой, дальше на 10 сек больше каждый раз, максимум 90 сек; при новом входе отсчёт сбрасывается.",
+      src: "Исходные часы обычных рейдов (20.11)", upd: "Обновлено" },
+    en: { title: "Raid schedule", lead: "Normal opens first each day. Hard opens as soon as Normal ends. Times are shown in your time zone.",
       live: "Open now", soon: "Next raid", leftEnd: "until the window closes", leftStart: "until start", at: "at", today: "today", tomorrow: "tomorrow",
       allT: "All raids for the day", time: "Your time", msk: "MSK", utc: "UTC", raid: "Raid",
-      tz: "Browser time zone: ", hardT: "Hard mode", hard: "Both raids offer a hard mode: pick the difficulty in the entry dialog. After death you wait to resurrect: 10 s after the first, 10 s longer each time, up to 90 s; the counter resets when you re-enter the raid.",
-      src: "Source: Steam news of 2026-11-20", upd: "Updated" }
+      tz: "Browser time zone: ", normal: "Normal", hardLabel: "Hard", hardT: "Revival", hard: "You can now revive inside the Gyldenlord Dimension. In Hard raids, after death you wait to resurrect: 10 s after the first, 10 s longer each time, up to 90 s; the counter resets when you re-enter the raid.",
+      src: "Original Normal start times (20 Nov)", upd: "Updated" }
   };
   var DAY = 864e5;
   function t(k) { return T[AA.lang][k]; }
@@ -102,7 +102,7 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
     var now = Date.now(), rows = [], d0 = utcMidnight(now), grid = document.getElementById("rd-cards");
     if (!grid) return;
     R.raids.forEach(function (r, i) {
-      var s = status(r, now), nm = AA.lang === "ru" ? r.ru : r.en;
+      var s = status(r, now), nm = (AA.lang === "ru" ? r.ru : r.en) + " · " + t(r.difficulty === "hard" ? "hardLabel" : "normal");
       var el = document.getElementById("rd-c" + i);
       if (!el) {
         el = document.createElement("section"); el.className = "card rd-card"; el.id = "rd-c" + i;
@@ -117,12 +117,12 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
       setText(el.querySelector(".rd-sub"), s.live ? t("leftEnd") : (s.next ? t("leftStart") + " · " + dayWord(s.next.start) + " " + t("at") + " " + fmt(s.next.start) : ""));
       r.times.forEach(function (x) {
         var tod = minutes(x) * 6e4, isLive = s.live && ((s.live.start - d0 + DAY) % DAY) === tod, isNext = !s.live && s.next && ((s.next.start - d0 + DAY) % DAY) === tod;
-        rows.push({ st: d0 + tod, tod: tod, name: nm, cls: isLive ? "live" : (isNext ? "next" : "") });
+        rows.push({ st: d0 + tod, tod: tod, end: d0 + tod + r.dur * 6e4, name: nm, cls: isLive ? "live" : (isNext ? "next" : "") });
       });
     });
     rows.sort(function (a, b) { return a.tod - b.tod; });
     setHtml(document.getElementById("rd-rows"), "rows", rows.map(function (x) {
-      return '<tr class="' + x.cls + '"><td>' + esc(x.name) + '</td><td class="n">' + fmt(x.st) + '</td><td class="n">' + fmt(x.st, "Europe/Moscow") + '</td><td class="n">' + fmt(x.st, "UTC") + '</td></tr>';
+      return '<tr class="' + x.cls + '"><td>' + esc(x.name) + '</td><td class="n">' + (fmt(x.st) + '–' + fmt(x.end)) + '</td><td class="n">' + (fmt(x.st, "Europe/Moscow") + '–' + fmt(x.end, "Europe/Moscow")) + '</td><td class="n">' + (fmt(x.st, "UTC") + '–' + fmt(x.end, "UTC")) + '</td></tr>';
     }).join(""));
   }
   build();

@@ -116,6 +116,9 @@ for cid, (o, ing, skill, lvl, cost, ctype) in sorted(ql.items()):
     rid = "q" + cid
     recipes.append({"id": rid, "craft": int(cid), "out": o[0][0], "outQty": o[0][1], "ing": [{"item": a, "qty": b} for a, b in ing],
                     "fee": 0, "learnCost": cost, "src": "questlog"})
+    # November 25: exact Fine material quantities for finished throwing weapons are pending.
+    if 60203031 <= int(cid) <= 60203044 and any(item in (70308003, 70303002, 70303004) for item, qty in ing):
+        recipes[-1]["pendingQuantities"] = True
     sub["items"].append({"i": o[0][0], "q": o[0][1], "l": 0, "r": rid})
 
 # порядок вкладок как в игре
