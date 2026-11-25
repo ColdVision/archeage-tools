@@ -1,9 +1,9 @@
-# Автообновление новостей из группы ВК: раз в 3 часа забирает посты, обновляет data/news.json и news.js
-# и коммитит изменения; GitHub Pages сам пересоберёт сайт. Нужен секрет репозитория VK_TOKEN (сервисный ключ).
+# Автообновление новостей из группы ВК: каждый час забирает посты, обновляет data/news.json и news.js
+# и коммитит изменения; главная страница читает опубликованные данные из main. Нужен секрет репозитория VK_TOKEN (сервисный ключ).
 name: Обновить новости ВК
 on:
   schedule:
-    - cron: "17 */3 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 permissions:
   contents: write
@@ -21,7 +21,7 @@ jobs:
       - name: Импорт новостей
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
-        run: python tools/import_vk_news.py
+        run: python tools/import_vk_news.py --count 100
       - name: Коммит, если есть изменения
         run: |
           if [ -n "$(git status --porcelain data/news.json data/news.js)" ]; then

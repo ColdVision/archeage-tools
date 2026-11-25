@@ -64,7 +64,7 @@ def main():
         if not txt and p.get("copy_history"):
             txt = (p["copy_history"][0].get("text") or "").strip()
         if not txt:
-            continue
+            txt = "Публикация сообщества ВКонтакте"
         lines = [l for l in txt.split("\n") if l.strip()]
         title = re.sub(r"\s+", " ", lines[0]).strip()
         body = "\n\n".join(lines[1:]) if len(lines) > 1 else ""
@@ -77,7 +77,7 @@ def main():
             "id": "vk-%s" % p["id"],
             "date": datetime.datetime.fromtimestamp(p["date"], datetime.timezone.utc).strftime("%Y-%m-%d"),
             "type": "patch" if any(w in low for w in words) else "news",
-            "title": {"ru": title, "en": title}, "text": {"ru": body, "en": body},
+            "title": {"ru": title, "en": "VK community post" if title == "Публикация сообщества ВКонтакте" else title}, "text": {"ru": body, "en": body},
             "version": "", "build": "",
             "url": "https://vk.ru/wall%s_%s" % (p["owner_id"], p["id"]), "source": "vk",
         }

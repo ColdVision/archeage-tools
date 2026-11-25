@@ -45,16 +45,38 @@
     document.title = t("title");
     document.getElementById("h-title").textContent = t("title");
     document.getElementById("h-news-t").textContent = t("newsT");
-    var items = news.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var items = news.slice().sort(function (a, b) { return b.date.localeCompare(a.date) || (Number(b.id.slice(3)) || 0) - (Number(a.id.slice(3)) || 0); });
     document.getElementById("h-feed").innerHTML = items.length ? items.map(function (i) { return "<li>" + entry(i) + "</li>"; }).join("") : '<li class="mute">' + t("empty") + '</li>';
   }
   function useEmbedded() { news = (window.AA_NEWS && window.AA_NEWS.items) || []; render(); }
   useEmbedded();
   window.addEventListener("aa-lang", render);
-  try {
-    fetch("data/news.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (j) { news = j.items || []; render(); }).catch(function () {});
-  } catch (e) {}
+  // Commits made by the news workflow can precede a Pages rebuild.
+  var feedUrl = location.hostname === "coldvision.github.io"
+    ? "https://raw.githubusercontent.com/ColdVision/archeage-tools/main/data/news.json"
+    : "data/news.json";
+  var loading = false;
+  async function refreshNews() {
+    if (loading || document.hidden || location.protocol === "file:") return;
+    loading = true;
+    try {
+      var response = await fetch(feedUrl, { cache: "no-store" });
+      if (!response.ok) return;
+      var feed = await response.json();
+      if (Array.isArray(feed.items) && JSON.stringify(feed.items) !== JSON.stringify(news)) {
+        news = feed.items;
+        render();
+      }
+    } catch (e) {
+      // Keep the last rendered feed when the connection is unavailable.
+    } finally {
+      loading = false;
+    }
+  }
+  refreshNews();
+  setInterval(refreshNews, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", refreshNews);
+  window.addEventListener("online", refreshNews);
 })();
 </script>
 </body>
