@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Иконки товаров и предметов (материалы, награды) -> assets/icons/*.png (64x64).
+"""Иконки паков, материалов и наград -> assets/trade/icons/*.png.
 
-Источник картинок — файлы игры через HTTP-API X5Viewer (запустить: X5Viewer.exe --no-browser, порт 8766):
-  /api/texture?path=X5/Content/UI/....uasset  (только чтение).
-Иконки предметов: Item.csv (FK_iconId) -> Icon.csv (icon) -> путь текстуры.
-Иконки торговых товаров: в клиенте таблица TradeGood пуста, соответствие «товар -> текстура» взято с questlog.gg
-(только имена текстур, ниже), сами картинки берутся из игры.
+Сначала используются уже сохранённые иконки сайта. Для остальных
+Item.csv и TradeGood.csv связываются с Icon.csv по FK_iconId. Текстуры
+читаются через HTTP-API X5Viewer (X5Viewer.exe --no-browser, порт 8766).
+Для старых выгрузок с пустой TradeGood.csv используются пути из questlog.gg.
 
 Использование: python tools/trade/build_icons.py [--cms DIR] [--api http://127.0.0.1:8766]
 """
-import argparse, csv, io, json, os, sys, urllib.request
+import argparse, csv, io, json, os, shutil, urllib.request
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # корень сайта (Site)
@@ -53,12 +52,13 @@ def main():
     ap.add_argument("--api", default="http://127.0.0.1:8766")
     a = ap.parse_args()
     out_dir = os.path.join(ROOT, "assets", "trade", "icons"); os.makedirs(out_dir, exist_ok=True)
-    src = json.load(open(os.path.join(ROOT, "data", "trade", "manual", "trade-goods.json"), encoding="utf-8"))["goods"]
+    with open(os.path.join(ROOT, "data", "trade", "tradedata.json"), encoding="utf-8") as f:
+        goods = json.load(f)["goods"]
     items = set()
-    for r in src.values():
-        for m in r[5]: items.add(m[0])
-        for v in r[4].values():
-            if isinstance(v, list): items.add(v[0])
+    for g in goods:
+        econ = g.get("econ", {})
+        items.update(m["id"] for m in econ.get("mats", ()))
+        items.update(v["item"]["id"] for v in econ.get("pay", {}).values() if "item" in v)
     item_tbl = {r["id"]: r for r in rd(a.cms, "Item")}
     icon_tbl = {r["id"]: r["icon"] for r in rd(a.cms, "Icon")}
     ok = bad = 0
@@ -66,18 +66,35 @@ def main():
         r = item_tbl.get(str(iid)); path = r and icon_tbl.get(r["FK_iconId"])
         out = os.path.join(out_dir, "i%d.png" % iid)
         if os.path.exists(out): ok += 1; continue
+        craft_icon = os.path.join(ROOT, "assets", "craft", "icons", "%d.png" % iid)
         try:
-            if not path: raise ValueError("нет иконки в Icon.csv")
-            fetch(a.api, path, out); ok += 1
+            if os.path.isfile(craft_icon):
+                shutil.copyfile(craft_icon, out)
+            elif path:
+                fetch(a.api, path, out)
+            else:
+                raise ValueError("нет иконки в Icon.csv")
+            ok += 1
         except Exception as e:
             bad += 1; print("предмет", iid, e)
-    cache = {}
-    for gid, path in sorted(good_icons().items()):
+
+    paths = good_icons()
+    paths.update({int(r["id"]): icon_tbl[r["FK_iconId"]] for r in rd(a.cms, "TradeGood")
+                  if r["FK_iconId"] in icon_tbl})
+    cache = {path: os.path.join(out_dir, "g%d.png" % gid) for gid, path in paths.items()
+             if os.path.isfile(os.path.join(out_dir, "g%d.png" % gid))}
+    for gid in sorted(g["id"] for g in goods):
         out = os.path.join(out_dir, "g%d.png" % gid)
         if os.path.exists(out): ok += 1; continue
+        path = paths.get(gid)
         try:
-            if path in cache: Image.open(cache[path]).save(out)
-            else: fetch(a.api, path, out); cache[path] = out
+            if path in cache:
+                shutil.copyfile(cache[path], out)
+            elif path:
+                fetch(a.api, path, out)
+                cache[path] = out
+            else:
+                raise ValueError("нет иконки в Icon.csv")
             ok += 1
         except Exception as e:
             bad += 1; print("товар", gid, e)
