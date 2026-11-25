@@ -11,10 +11,13 @@
 <link rel="stylesheet" href="../assets/site.css?v=2">
 <link rel="stylesheet" href="../assets/design.css?v=8">
 <style>
-.rd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:14px 0}
+.rd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,auto);grid-auto-flow:column;gap:16px;margin:14px 0}
+@media(max-width:820px){.rd-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-flow:row}}
+.rd-grid .rd-card.rd-hard{border:1px solid #985557}
 .rd-card h2{margin:0 0 4px}
 .rd-state{display:inline-block;font-size:13px;font-weight:650;border-radius:999px;padding:3px 12px;margin:4px 0 8px;border:1px solid var(--line);color:var(--mute)}
-.rd-state.on{color:#04201c;background:var(--good,#6FD18C);border-color:transparent}
+.rd-state.on{color:#290808;background:#f07979;border-color:transparent}
+.rd-state.nearest{color:#04201c;background:var(--good,#6FD18C);border-color:transparent}
 .rd-count{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
 .rd-sub{color:var(--mute);font-size:14px;margin-top:2px}
 table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
@@ -40,13 +43,13 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
   "use strict";
   var esc = AA.esc, R = window.AA_RAIDS || { raids: [] };
   var T = {
-    ru: { title: "Расписание рейдов", lead: "Обычная сложность открывается первой, сложная — сразу после неё. Время показано в вашем часовом поясе.",
-      live: "Идёт сейчас", soon: "Следующий рейд", leftEnd: "до конца окна", leftStart: "до начала", at: "в", today: "сегодня", tomorrow: "завтра",
+    ru: { title: "Расписание рейдов", lead: "Сначала открывается обычный рейд. Сложный начинается сразу после его окончания. Время показано в вашем часовом поясе.",
+      live: "Идёт сейчас", nearest: "Ближайший рейд", soon: "По расписанию", leftEnd: "до конца окна", startsAt: "Начало в",
       allT: "Все рейды на сутки", time: "Ваше время", msk: "МСК", utc: "UTC", raid: "Рейд",
-      tz: "Часовой пояс браузера: ", normal: "Обычная", hardLabel: "Сложная", hardT: "Воскрешение", hard: "В Gyldenlord Dimension теперь можно воскресать внутри подземелья. В сложных рейдах после смерти нужно ждать воскрешения: 10 сек после первой, дальше на 10 сек больше каждый раз, максимум 90 сек; при новом входе отсчёт сбрасывается.",
+      tz: "Часовой пояс браузера: ", normal: "Обычный", hardLabel: "Сложный", hardT: "Воскрешение", hard: "В Gyldenlord Dimension теперь можно воскресать внутри подземелья. В сложных рейдах после смерти нужно ждать воскрешения: 10 сек после первой, дальше на 10 сек больше каждый раз, максимум 90 сек; при новом входе отсчёт сбрасывается.",
       src: "Исходные часы обычных рейдов (20.11)", upd: "Обновлено" },
     en: { title: "Raid schedule", lead: "Normal opens first each day. Hard opens as soon as Normal ends. Times are shown in your time zone.",
-      live: "Open now", soon: "Next raid", leftEnd: "until the window closes", leftStart: "until start", at: "at", today: "today", tomorrow: "tomorrow",
+      live: "Open now", nearest: "Next raid", soon: "Scheduled", leftEnd: "until the window closes", startsAt: "Starts at",
       allT: "All raids for the day", time: "Your time", msk: "MSK", utc: "UTC", raid: "Raid",
       tz: "Browser time zone: ", normal: "Normal", hardLabel: "Hard", hardT: "Revival", hard: "You can now revive inside the Gyldenlord Dimension. In Hard raids, after death you wait to resurrect: 10 s after the first, 10 s longer each time, up to 90 s; the counter resets when you re-enter the raid.",
       src: "Original Normal start times (20 Nov)", upd: "Updated" }
@@ -75,11 +78,6 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
     });
     return { live: live, next: next };
   }
-  function dayWord(ms) {
-    var n = new Date(), a = new Date(ms);
-    var k = Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(n.getFullYear(), n.getMonth(), n.getDate())) / DAY);
-    return k === 0 ? t("today") : k === 1 ? t("tomorrow") : new Intl.DateTimeFormat(loc(), { day: "numeric", month: "long" }).format(a);
-  }
   function dur(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
     return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60);
@@ -101,20 +99,24 @@ table.rd-t{border-collapse:collapse;width:100%;font-size:16px}
   function tick() {
     var now = Date.now(), rows = [], d0 = utcMidnight(now), grid = document.getElementById("rd-cards");
     if (!grid) return;
+    var states = R.raids.map(function (raid) { return status(raid, now); });
+    var nearestStart = states.reduce(function (earliest, state) {
+      return state.next ? Math.min(earliest, state.next.start) : earliest;
+    }, Infinity);
     R.raids.forEach(function (r, i) {
-      var s = status(r, now), nm = (AA.lang === "ru" ? r.ru : r.en) + " · " + t(r.difficulty === "hard" ? "hardLabel" : "normal");
+      var s = states[i], nearest = s.next && s.next.start === nearestStart, nm = (AA.lang === "ru" ? r.ru : r.en) + " · " + t(r.difficulty === "hard" ? "hardLabel" : "normal");
       var el = document.getElementById("rd-c" + i);
       if (!el) {
-        el = document.createElement("section"); el.className = "card rd-card"; el.id = "rd-c" + i;
+        el = document.createElement("section"); el.className = "card rd-card" + (r.difficulty === "hard" ? " rd-hard" : ""); el.id = "rd-c" + i;
         el.innerHTML = '<h2></h2><span class="rd-state"></span><div class="rd-count"></div><div class="rd-sub"></div>';
         grid.appendChild(el);
       }
       var stEl = el.querySelector(".rd-state");
       setText(el.querySelector("h2"), nm);
-      setText(stEl, s.live ? t("live") : t("soon"));
-      stEl.className = "rd-state" + (s.live ? " on" : "");
+      setText(stEl, t(s.live ? "live" : nearest ? "nearest" : "soon"));
+      stEl.className = "rd-state" + (s.live ? " on" : nearest ? " nearest" : "");
       setText(el.querySelector(".rd-count"), s.live ? dur(s.live.end - now) : (s.next ? dur(s.next.start - now) : "—"));
-      setText(el.querySelector(".rd-sub"), s.live ? t("leftEnd") : (s.next ? t("leftStart") + " · " + dayWord(s.next.start) + " " + t("at") + " " + fmt(s.next.start) : ""));
+      setText(el.querySelector(".rd-sub"), s.live ? t("leftEnd") : (s.next ? t("startsAt") + " " + fmt(s.next.start) : ""));
       r.times.forEach(function (x) {
         var tod = minutes(x) * 6e4, isLive = s.live && ((s.live.start - d0 + DAY) % DAY) === tod, isNext = !s.live && s.next && ((s.next.start - d0 + DAY) % DAY) === tod;
         rows.push({ st: d0 + tod, tod: tod, end: d0 + tod + r.dur * 6e4, name: nm, cls: isLive ? "live" : (isNext ? "next" : "") });
