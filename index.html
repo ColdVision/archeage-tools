@@ -63,7 +63,11 @@
       var response = await fetch(feedUrl, { cache: "no-store" });
       if (!response.ok) return;
       var feed = await response.json();
-      if (Array.isArray(feed.items) && JSON.stringify(feed.items) !== JSON.stringify(news)) {
+      // The importer only appends or edits posts. Ignore an older CDN snapshot.
+      if (!Array.isArray(feed.items)) return;
+      var ids = new Set(feed.items.map(function (post) { return post.id; }));
+      if (news.some(function (post) { return !ids.has(post.id); })) return;
+      if (JSON.stringify(feed.items) !== JSON.stringify(news)) {
         news = feed.items;
         render();
       }
