@@ -95,6 +95,7 @@ def qcat(cid, out):
     c = int(cid); o = str(out)
     if 60203000 <= c < 60204000:
         return ("alchemy", {"020": "Усиленные метательные", "030": "Мастерские метательные", "105": "Источники жизни"}[o[2:5]])
+    if c in (60450001, 60450002): return ("alchemy", "Лунные камни")
     if 60431000 <= c < 60435000: return ("alchemy", ACC[o[5]])
     if c in (60313701, 60413701): return ("engineering", "Дельтапланы")
     if 60400000 <= c < 60400100: return ("engineering", "Рюкзаки")
@@ -116,9 +117,6 @@ for cid, (o, ing, skill, lvl, cost, ctype) in sorted(ql.items()):
     rid = "q" + cid
     recipes.append({"id": rid, "craft": int(cid), "out": o[0][0], "outQty": o[0][1], "ing": [{"item": a, "qty": b} for a, b in ing],
                     "fee": 0, "learnCost": cost, "src": "questlog"})
-    # November 25: exact Fine material quantities for finished throwing weapons are pending.
-    if 60203031 <= int(cid) <= 60203044 and any(item in (70308003, 70303002, 70303004) for item, qty in ing):
-        recipes[-1]["pendingQuantities"] = True
     sub["items"].append({"i": o[0][0], "q": o[0][1], "l": 0, "r": rid})
 
 # порядок вкладок как в игре

@@ -139,6 +139,7 @@ li.new{animation:nodeIn var(--t-med) var(--ease) both;animation-delay:calc(var(-
 </style>
 <link rel="stylesheet" href="../assets/site.css?v=2">
 <link rel="stylesheet" href="../assets/design.css?v=8">
+<link rel="stylesheet" href="../assets/item-tooltip.css">
 </head>
 <body data-root="../" data-page="craft">
 <div id="aa-header"></div>
@@ -179,6 +180,10 @@ function save() { try { localStorage.setItem(LSK, JSON.stringify(S)); } catch (e
 const $ = id => document.getElementById(id);
 const h = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = n => n == null ? "—" : (Math.round(n * 100) / 100).toLocaleString("ru-RU");
+function classLabel(name) {
+  const ru = {Warrior:"Воин", Ranger:"Следопыт", Berserker:"Берсерк", Mage:"Маг"};
+  return S.lang === "ru" ? ru[name] || name : name;
+}
 function nm(id) { const i = items.get(id); if (!i) return "#" + id; return (S.lang === "ru" ? (i.ru || i.en) : (i.en || i.ru)) || ("#" + id); }
 const allRecipes = () => SEED.filter(r => !r.pendingQuantities).map(r => ({...r, seed:true})).concat(S.recipes);
 const recipesFor = id => allRecipes().filter(r => r.out === id);
@@ -245,6 +250,16 @@ function ico(id, cls) {
 }
 // ---------- вкладки крафта (как в игре) и выезжающая панель ----------
 const TABS = (window.CRAFTING && window.CRAFTING.tabs) || [];
+const additions = D.items.filter(item => item.source === "questlog");
+if (additions.length) {
+  const groups = new Map();
+  for (const it of additions) {
+    if (!groups.has(it.cat)) groups.set(it.cat, {key:it.cat, ru:CAT[it.cat] || it.cat, items:[]});
+    const recipe = SEED.find(r => r.out === it.id);
+    groups.get(it.cat).items.push({i:it.id, q:recipe ? recipe.outQty : 1, r:recipe && recipe.id});
+  }
+  TABS.push({key:"new-items", ru:"Новые предметы", subs:[...groups.values()]});
+}
 const F = {tab:null, subs:new Set(), q:""};
 const tabCount = t => t.subs.reduce((n, x) => n + x.items.length, 0);
 function renderNav() {
@@ -255,7 +270,7 @@ function renderNav() {
     const open = q ? true : F.tab === t.key;
     let h2 = '<button class="nv' + (open ? " on" : "") + '" data-s="' + t.key + '"><span><span class="ch">' + (open ? "▾" : "▸") + "</span>" + h(t.ru) + "</span><small>" + tabCount(t) + "</small></button>";
     if (open) { let ix = 0; h2 += '<div class="grp' + (F.anim === t.key ? " in" : "") + '">' + rows.map(({sb, es}) => { const so = q || F.subs.has(t.key + "/" + sb.key); return '<button class="sb' + (so ? " on" : "") + '" data-sub="' + t.key + "/" + sb.key + '"><span><span class="ch">' + (so ? "▾" : "▸") + "</span>" + h(sb.ru) + "</span><small>" + es.length + "</small></button>" + (so ? '<div class="sg' + (F.animSub === t.key + "/" + sb.key ? " in" : "") + '">' : "") + (so ? es : []).map(e => '<button style="--d:' + Math.min(ix++, 14) + '" class="ci' + (e.l ? " lk" : "") + (e.i === S.target ? " on" : "") + '" data-i="' + e.i + '" data-r="' + (e.r || "") + '" title="' + (e.l ? "Рецепт не изучен" : "") + '">' + ico(e.i) +
-      '<span class="cn"><span class="gr-' + (items.get(e.i).grade || "") + '">' + h(nm(e.i)) + (e.q > 1 ? " ×" + e.q : "") + "</span>" + (e.l ? "<small>рецепт закрыт</small>" : "") + "</span></button>").join("") + (so ? "</div>" : ""); }).join("") + "</div>"; }
+      '<span class="cn"><span class="gr-' + (items.get(e.i).grade || "") + '">' + h(nm(e.i)) + (items.get(e.i).className ? " · " + h(classLabel(items.get(e.i).className)) : "") + (e.q > 1 ? " ×" + e.q : "") + "</span>" + (e.l ? "<small>рецепт закрыт</small>" : "") + "</span></button>").join("") + (so ? "</div>" : ""); }).join("") + "</div>"; }
     return h2;
   }).join("") || '<div class="mut" style="padding:10px">Ничего не найдено</div>';
   $("nav").querySelectorAll("[data-s]").forEach(b => b.onclick = () => { F.tab = F.tab === b.dataset.s ? null : b.dataset.s; F.anim = F.tab; renderNav(); F.anim = null; });
@@ -287,7 +302,7 @@ function nodeHTML(n, depth) {
     (n.mode === "craft" ? "крафт" + (n.runs > 1 ? " ×" + n.runs : "") + (n.made > n.qty ? ", излишек " + (n.made - n.qty) : "") : (n.recipes.length ? "покупка" : "сырьё"));
   const qty = have ? n.total : n.qty;
   const need = n.haveUsed && !have ? ' <small>(нужно ' + fmt(n.total) + ", есть " + fmt(n.haveUsed) + ")</small>" : "";
-  const chip = '<div class="nd' + (root ? " root" : "") + (have ? " have" : "") + (hasKids && !root ? " exp" : "") + '" data-nd="' + n.item + '"' + (hasKids && !root ? ' title="Клик: показать/скрыть состав"' : "") + ">" + ico(n.item, root ? "xl" : "m") +
+  const chip = '<div class="nd' + (root ? " root" : "") + (have ? " have" : "") + (hasKids && !root ? " exp" : "") + '" tabindex="0" data-nd="' + n.item + '"' + (hasKids && !root ? ' title="Клик: показать/скрыть состав"' : "") + ">" + ico(n.item, root ? "xl" : "m") +
     '<span class="nt"><b>' + h(nm(n.item)) + "</b><small>" + sub + need + "</small></span>" + (root && qty === 1 ? "" : '<span class="qb">' + fmt(qty) + "×</span>") +
     (hasKids && !root ? '<span class="arr">' + (open ? "▾" : "▸") + "</span>" : "") +
     (!root ? '<button class="tgb" data-cfg="' + n.item + '" title="Настройки: способ получения, есть на складе">⚙</button>' : "") + "</div>";
@@ -313,7 +328,7 @@ function renderRes(root) {
   if (root) walk(root, true);
   const rows = [...need].sort((a, b) => (a[1].craft - b[1].craft) || nm(a[0]).localeCompare(nm(b[0])));
   const seen = new Map(); let nIdx = 0;
-  $("resList").innerHTML = rows.length ? rows.map(([id, e]) => { seen.set(id, e.q); const cls = !prevRes.has(id) ? " new" : prevRes.get(id) !== e.q ? " chg" : ""; return '<div class="rr' + cls + '" style="--d:' + (cls === " new" ? Math.min(nIdx++, 12) : 0) + '">' + ico(id) + '<span class="cn"><span class="gr-' + (items.get(id).grade || "") + '">' + h(nm(id)) + "</span>" + (e.craft ? "<small>крафт (ветка закрыта)</small>" : "") + "</span><b>" + e.q + "×</b></div>"; }).join("") : '<span class="mut">Выберите предмет.</span>';
+  $("resList").innerHTML = rows.length ? rows.map(([id, e]) => { seen.set(id, e.q); const cls = !prevRes.has(id) ? " new" : prevRes.get(id) !== e.q ? " chg" : ""; return '<div class="rr' + cls + '" data-resource="' + id + '" tabindex="0" style="--d:' + (cls === " new" ? Math.min(nIdx++, 12) : 0) + '">' + ico(id) + '<span class="cn"><span class="gr-' + (items.get(id).grade || "") + '">' + h(nm(id)) + "</span>" + (e.craft ? "<small>крафт (ветка закрыта)</small>" : "") + "</span><b>" + e.q + "×</b></div>"; }).join("") : '<span class="mut">Выберите предмет.</span>';
   prevRes = seen;
 }
 function fitTree() {
@@ -340,7 +355,7 @@ function renderTree(root) {
   if (!root.kids && !root.recipes.length) html = '<div class="mut" style="margin-bottom:8px">Состав рецепта этого предмета неизвестен.' + (items.get(root.item).craft ? " В клиенте игры состав рецептов не хранится (серверные данные), на скриншотах он не показан." : "") + "</div>" + html;
   $("tree").innerHTML = html;
   markNew(); fitTree();
-  $("tree").querySelectorAll(".nd.exp").forEach(d => { d.tabIndex = 0; d.setAttribute("role", "button"); d.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); d.click(); } }; });
+  $("tree").querySelectorAll(".nd.exp").forEach(d => { d.tabIndex = 0; d.setAttribute("role", "button"); d.onkeydown = e => { if (e.target === d && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); d.click(); } }; });
   $("tree").querySelectorAll(".nd.exp").forEach(d => d.onclick = () => { const id = d.dataset.nd; S.open[id] = !S.open[id]; save(); render(); });
   $("tree").querySelectorAll("[data-cfg]").forEach(b => b.onclick = e => { e.stopPropagation(); const id = +b.dataset.cfg; if (ctl.has(id)) ctl.delete(id); else ctl.add(id); render(); });
   $("tree").querySelectorAll(".ctl").forEach(c => c.onclick = e => e.stopPropagation());
@@ -349,6 +364,7 @@ function renderTree(root) {
 }
 // ---------- английский интерфейс (общий язык сайта): подмена русских подписей по словарю, оригиналы запоминаются ----------
 const EN_UI = [
+ ["Новые предметы","New items"], ["Камень полнолуния","Lunastone"], ["Снаряжение","Equipment"], ["Прочее","Other"], ["Расходуемое","Consumable"], ["Материал","Material"], ["Лунные камни","Lunastones"],
  ["Одноручные мечи","One-handed swords"],
  ["Двуручные мечи","Two-handed swords"],
  ["Короткие мечи","Short swords"],
@@ -444,5 +460,6 @@ $("qty").onchange = e => { S.qty = Math.max(1, Math.floor(+e.target.value) || 1)
 render(); renderNav(); uiText($("aa-main"));
 if (S.lang === "en") document.title = "Craft calculator · ArcheAge Chronicles";
 </script>
+<script src="../assets/item-tooltip.js"></script>
 </body>
 </html>

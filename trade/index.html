@@ -419,13 +419,6 @@ function drawMapOverlay(){
 
 function saleOnly(g){ return /Tempering Stone Chest$/.test(g.name.en); }
 function legacyNotice(){ return S.lang==="ru"?"Только сдача готового сундука":"Existing chests can only be sold"; }
-function newTradeGoods(){
-  var ru=S.lang==="ru";
-  var loot=ru?["Связка грубого меха","Связка переработанной ткани","Ящик трофейных знаков батальона Леопарда","Ящик очищенных от ржавчины компасов","Ящик закалённых клыков","Ящик трофейных знаков батальона Ликаона","Ящик запечатанных осколков душ","Ящик трофейных знаков батальона Горгульи","Ящик заиндевевшей чешуи","Ящик найденных солдатских реликвий","Ящик очищенных ритуальных масок","Мешок переработанного металлолома"]:["Natural Crude Fur Bundle","Recycled Cloth Bundle","Captured Leopard Battalion Mark Crate","Rust-Cleaned Compass Crate","Hardened Fang Crate","Captured Lycaon Battalion Mark Crate","Sealed Soul Fragment Crate","Captured Gargoyle Battalion Mark Crate","Frosted Scale Crate","Recovered Soldier Keepsake Crate","Purified Ritual Mask Crate","Recycled Scrap Metal Sack"];
-  var grades=ru?["Тусклые","Яркие","Сияющие"]:["Faint","Vivid","Brilliant"];
-  grades.forEach(function(grade){ (ru?["оружия","брони"]:["Weapon","Armor"]).forEach(function(kind){ loot.push(ru?grade+" закалочные камни для "+kind+" (набор)":grade+" "+kind+" Tempering Stone Bundle"); }); });
-  return '<details class="gmeta"><summary>'+(ru?"Новые товары · 18":"New trade goods · 18")+'</summary><p>'+(ru?"Торговые посты, состав и награды ещё уточняются.":"Trading posts, ingredients and payouts are pending.")+'</p><ul>'+loot.map(function(n){return "<li>"+esc(n)+"</li>";}).join("")+"</ul></details>";
-}
 function ddItems(){
   var t=tr(), q=(S.q||"").toLowerCase(), h="", last=null;
   D.goods.filter(function(g){ return (!S.fp||String(g.origin)===String(S.fp)) && (!q||nm(g.name).toLowerCase().indexOf(q)>=0); })
@@ -450,7 +443,6 @@ function renderPanel(){
   var h='<div class="lh">'+t.p_pick+'</div><div class="dd"><button class="ddb" id="dd-b" aria-expanded="'+(S.dd?"true":"false")+'">'
    +(g?ico(GICO(g.id),"s")+'<span>'+esc(nm(g.name))+'</span>':'<span class="mute">'+t.pickGood+'</span>')+'<i>▾</i></button>'
    +'<div class="ddl" id="dd-l" style="display:'+(S.dd?'block':'none')+'"><div id="dd-i">'+ddItems()+'</div></div></div>';
-  h+=newTradeGoods();
   if(!g){ var og=origin(); if(og&&postById[og]) h+='<div class="gmeta">'+esc(nm(postById[og].name))+' · '+esc(postById[og].company)+(S.c.to&&postById[S.c.to]?' → '+esc(shortPost(postById[S.c.to])):'')+'</div>'; h+='<p class="mute" style="margin-top:14px">'+t.p_open+'</p>'; el.innerHTML=h; bindPanel(null); return; }
   h+='<div class="gmeta">'+esc(nm(postById[g.origin].name))+' · '+esc(postById[g.origin].company)+'</div>';
   if(saleOnly(g)) h+='<p class="gmeta">'+legacyNotice()+'</p>';

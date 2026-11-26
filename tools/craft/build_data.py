@@ -122,6 +122,9 @@ def main():
         items.append(o)
         idx[iid] = o
 
+    with open(os.path.join(ROOT, "data", "craft", "manual", "questlog-items.json"), encoding="utf-8") as source:
+        items.extend(item for item in json.load(source) if item["id"] not in idx)
+
     # ---------- разбор предметов (disasm) ----------
     # Item.FK_disasmPackId -> LootCondition.FK_lootPack -> (lootGroupId, rate) -> LootItem.lootGroupId
     lc = read_cms(a.cms, "LootCondition") or []

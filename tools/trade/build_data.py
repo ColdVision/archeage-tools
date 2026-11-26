@@ -124,6 +124,13 @@ def main():
             econ_n += 1
         print("экономика (внешний источник):", econ_n, "товаров")
 
+    with open(os.path.join(ROOT, "data", "trade", "manual", "questlog-new-goods.json"), encoding="utf-8") as source:
+        for entry in json.load(source):
+            goods[entry["id"]] = entry
+            post = next(p for p in out_posts if p["id"] == entry["origin"])
+            if entry["id"] not in post["goods"]:
+                post["goods"].append(entry["id"])
+
     # группы качества: состояние по времени (мс от начала доставки) и коэффициент (б.п.)
     order = {"Better": 0, "Good": 1, "Normal": 2, "Bad": 3}
     qg = {}
